@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import type { User } from 'firebase/auth';
 import type { Book } from '../types';
 import { COLORS, FONTS } from '../constants/theme';
 import { today, addDays } from '../utils/dateUtils';
@@ -12,6 +13,14 @@ import { Toast } from '../components/Toast';
 type Tab = 'borrowing' | 'history' | 'search';
 
 type EditableBook = Partial<Book> & { title: string; authors: string; isbn: string };
+
+interface Props {
+  user: User | null;
+  calendarToken: string | null;
+  firebaseEnabled: boolean;
+  onSignIn: () => Promise<void>;
+  onSignOut: () => Promise<void>;
+}
 
 const TAB_STYLE = (active: boolean): React.CSSProperties => ({
   flex: 1,
@@ -27,8 +36,8 @@ const TAB_STYLE = (active: boolean): React.CSSProperties => ({
   fontFamily: FONTS.body,
 });
 
-export const MainApp = () => {
-  const { books, add, update, markReturned } = useBooks();
+export const MainApp = ({ user, calendarToken, firebaseEnabled, onSignIn, onSignOut }: Props) => {
+  const { books, add, update, markReturned } = useBooks(user?.uid ?? null);
   const [tab, setTab] = useState<Tab>('borrowing');
   const [scanning, setScanning] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -140,27 +149,69 @@ export const MainApp = () => {
                 えほん記録帳
               </div>
             </div>
-            <button
-              onClick={() => setScanning(true)}
-              disabled={loading}
-              style={{
-                background: COLORS.accent,
-                border: 'none',
-                borderRadius: 12,
-                padding: '10px 18px',
-                color: '#fff',
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontFamily: FONTS.body,
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              {loading ? '読込中…' : '📷 スキャン'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {firebaseEnabled && (
+                user ? (
+                  <button
+                    onClick={onSignOut}
+                    title={user.displayName ?? 'Sign out'}
+                    style={{
+                      background: 'none',
+                      border: `1px solid ${COLORS.border}`,
+                      borderRadius: 20,
+                      padding: '4px 10px',
+                      fontSize: 11,
+                      color: COLORS.inkLight,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    {user.photoURL && (
+                      <img src={user.photoURL} alt="" width={18} height={18} style={{ borderRadius: '50%' }} />
+                    )}
+                    サインアウト
+                  </button>
+                ) : (
+                  <button
+                    onClick={onSignIn}
+                    style={{
+                      background: 'none',
+                      border: `1px solid ${COLORS.border}`,
+                      borderRadius: 20,
+                      padding: '4px 10px',
+                      fontSize: 11,
+                      color: COLORS.inkLight,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    サインイン
+                  </button>
+                )
+              )}
+              <button
+                onClick={() => setScanning(true)}
+                disabled={loading}
+                style={{
+                  background: COLORS.accent,
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '10px 18px',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontFamily: FONTS.body,
+                  opacity: loading ? 0.6 : 1,
+                }}
+              >
+                {loading ? '読込中…' : '📷 スキャン'}
+              </button>
+            </div>
           </div>
 
           {/* Stats */}
@@ -259,7 +310,13 @@ export const MainApp = () => {
       {scanning && <ScannerView onDetected={handleDetected} onClose={() => setScanning(false)} />}
 
       {editBook && (
-        <BookSheet book={editBook} onSave={handleSave} onCancel={() => setEditBook(null)} />
+        <BookSheet
+          book={editBook}
+          calendarToken={calendarToken}
+          onSave={handleSave}
+          onCancel={() => setEditBook(null)}
+          onToast={showToast}
+        />
       )}
 
       {toast && <Toast message={toast} />}

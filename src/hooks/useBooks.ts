@@ -1,25 +1,89 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  collection,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  writeBatch,
+} from 'firebase/firestore';
 import type { Book } from '../types';
-import { loadBooks, addBook, updateBook, removeBook } from '../services/storage';
+import { loadBooks, saveBooks, addBook, updateBook, removeBook } from '../services/storage';
+import { db } from '../services/firebase';
 
-export const useBooks = () => {
+const booksCol = (uid: string) => collection(db!, 'users', uid, 'books');
+
+// Migrate any books stored locally to Firestore on first sign-in
+const migrateLocalToFirestore = async (uid: string) => {
+  const local = loadBooks();
+  if (local.length === 0) return;
+  const batch = writeBatch(db!);
+  local.forEach((book) => {
+    batch.set(doc(booksCol(uid), book.id), book);
+  });
+  await batch.commit();
+  saveBooks([]); // clear localStorage after migration
+};
+
+export const useBooks = (uid: string | null) => {
   const [books, setBooks] = useState<Book[]>(() => loadBooks());
 
-  const add = useCallback((book: Book) => {
-    setBooks((prev) => addBook(prev, book));
-  }, []);
+  useEffect(() => {
+    if (!uid || !db) return;
 
-  const update = useCallback((book: Book) => {
-    setBooks((prev) => updateBook(prev, book));
-  }, []);
+    // Migrate localStorage data to Firestore, then listen for real-time updates
+    migrateLocalToFirestore(uid).catch(console.error);
 
-  const remove = useCallback((id: string) => {
-    setBooks((prev) => removeBook(prev, id));
-  }, []);
+    const unsub = onSnapshot(booksCol(uid), (snap) => {
+      const firestoreBooks = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Book);
+      setBooks(firestoreBooks);
+    });
 
-  const markReturned = useCallback((id: string) => {
-    setBooks((prev) => updateBook(prev, { ...prev.find((b) => b.id === id)!, returned: true }));
-  }, []);
+    return unsub;
+  }, [uid]);
+
+  const add = useCallback(
+    async (book: Book) => {
+      if (uid && db) {
+        await setDoc(doc(booksCol(uid), book.id), book);
+      } else {
+        setBooks((prev) => addBook(prev, book));
+      }
+    },
+    [uid]
+  );
+
+  const update = useCallback(
+    async (book: Book) => {
+      if (uid && db) {
+        await updateDoc(doc(booksCol(uid), book.id), { ...book });
+      } else {
+        setBooks((prev) => updateBook(prev, book));
+      }
+    },
+    [uid]
+  );
+
+  const remove = useCallback(
+    async (id: string) => {
+      if (uid && db) {
+        await deleteDoc(doc(booksCol(uid), id));
+      } else {
+        setBooks((prev) => removeBook(prev, id));
+      }
+    },
+    [uid]
+  );
+
+  const markReturned = useCallback(
+    async (id: string) => {
+      const book = books.find((b) => b.id === id);
+      if (!book) return;
+      await update({ ...book, returned: true });
+    },
+    [books, update]
+  );
 
   return { books, add, update, remove, markReturned };
 };

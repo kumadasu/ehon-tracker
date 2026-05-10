@@ -2,18 +2,47 @@ import { useState } from 'react';
 import type { Book } from '../types';
 import { COLORS, FONTS } from '../constants/theme';
 import { addDays, today } from '../utils/dateUtils';
+import { addReturnEvent } from '../services/googleCalendar';
 import { StarRating } from './StarRating';
 
 interface Props {
   book: Partial<Book> & { title: string; authors: string; isbn: string };
+  calendarToken: string | null;
   onSave: (book: Book) => void;
   onCancel: () => void;
+  onToast: (msg: string) => void;
 }
 
-export const BookSheet = ({ book, onSave, onCancel }: Props) => {
+export const BookSheet = ({ book, calendarToken, onSave, onCancel, onToast }: Props) => {
   const [dueDate, setDueDate] = useState(book.dueDate ?? addDays(today(), 14));
   const [rating, setRating] = useState(book.rating ?? 0);
   const [memo, setMemo] = useState(book.memo ?? '');
+  const [addingCalendar, setAddingCalendar] = useState(false);
+
+  const handleAddToCalendar = async () => {
+    if (!calendarToken) {
+      onToast('Googleサインインが必要です');
+      return;
+    }
+    const savedBook: Book = {
+      id: book.id ?? Date.now().toString(),
+      isbn: book.isbn,
+      title: book.title,
+      authors: book.authors,
+      thumbnail: book.thumbnail ?? null,
+      publisher: book.publisher ?? '',
+      description: book.description ?? '',
+      borrowedAt: book.borrowedAt ?? today(),
+      returned: book.returned ?? false,
+      dueDate,
+      rating,
+      memo,
+    };
+    setAddingCalendar(true);
+    const result = await addReturnEvent(savedBook, calendarToken);
+    setAddingCalendar(false);
+    onToast(result.success ? '📅 カレンダーに登録しました' : `カレンダー登録に失敗しました: ${result.error}`);
+  };
 
   const handleSave = () => {
     onSave({
@@ -154,6 +183,28 @@ export const BookSheet = ({ book, onSave, onCancel }: Props) => {
           />
         </label>
 
+        {calendarToken && (
+          <button
+            onClick={handleAddToCalendar}
+            disabled={addingCalendar}
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: 'none',
+              color: COLORS.green,
+              border: `1.5px solid ${COLORS.green}`,
+              borderRadius: 12,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: FONTS.body,
+              marginBottom: 10,
+              opacity: addingCalendar ? 0.6 : 1,
+            }}
+          >
+            {addingCalendar ? '登録中…' : '📅 カレンダーに返却日を登録'}
+          </button>
+        )}
         <button
           onClick={handleSave}
           style={{
