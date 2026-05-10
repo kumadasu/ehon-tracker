@@ -1,0 +1,268 @@
+import { useState, useCallback } from 'react';
+import type { Book } from '../types';
+import { COLORS, FONTS } from '../constants/theme';
+import { today, addDays } from '../utils/dateUtils';
+import { fetchBookInfo } from '../services/googleBooks';
+import { useBooks } from '../hooks/useBooks';
+import { BookCard } from '../components/BookCard';
+import { BookSheet } from '../components/BookSheet';
+import { ScannerView } from '../components/ScannerView';
+import { Toast } from '../components/Toast';
+
+type Tab = 'borrowing' | 'history' | 'search';
+
+type EditableBook = Partial<Book> & { title: string; authors: string; isbn: string };
+
+const TAB_STYLE = (active: boolean): React.CSSProperties => ({
+  flex: 1,
+  padding: '10px 0',
+  background: 'none',
+  border: 'none',
+  borderBottom: `2.5px solid ${active ? COLORS.accent : 'transparent'}`,
+  color: active ? COLORS.accent : COLORS.inkLight,
+  fontSize: 13,
+  fontWeight: active ? 700 : 400,
+  cursor: 'pointer',
+  transition: 'all .15s',
+  fontFamily: FONTS.body,
+});
+
+export const MainApp = () => {
+  const { books, add, update, markReturned } = useBooks();
+  const [tab, setTab] = useState<Tab>('borrowing');
+  const [scanning, setScanning] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [editBook, setEditBook] = useState<EditableBook | null>(null);
+  const [query, setQuery] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleDetected = useCallback(async (isbn: string) => {
+    setScanning(false);
+    setLoading(true);
+    try {
+      const info = await fetchBookInfo(isbn);
+      if (!info) {
+        showToast('書籍情報が見つかりませんでした');
+        return;
+      }
+      setEditBook({
+        ...info,
+        borrowedAt: today(),
+        dueDate: addDays(today(), 14),
+        returned: false,
+        rating: 0,
+        memo: '',
+      });
+    } catch {
+      showToast('書籍情報の取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleSave = (book: Book) => {
+    if (books.some((b) => b.id === book.id)) {
+      update(book);
+      showToast('✏️ 更新しました');
+    } else {
+      add(book);
+      showToast('📚 登録しました！');
+      setTab('borrowing');
+    }
+    setEditBook(null);
+  };
+
+  const handleReturn = (id: string) => {
+    markReturned(id);
+    showToast('✓ 返却済みに変更しました');
+  };
+
+  const borrowing = books
+    .filter((b) => !b.returned)
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  const history = books.filter((b) => b.returned);
+  const searchResults = query.trim()
+    ? books.filter(
+        (b) =>
+          b.title.includes(query) || b.authors.includes(query) || b.memo.includes(query)
+      )
+    : [];
+
+  const visibleBooks =
+    tab === 'borrowing' ? borrowing : tab === 'history' ? history : searchResults;
+
+  return (
+    <>
+      <style>{`
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: ${COLORS.bg}; font-family: ${FONTS.body}; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: ${COLORS.border}; border-radius: 2px; }
+        @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        .card-enter { animation: slideUp .25s ease; }
+      `}</style>
+
+      <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', background: COLORS.bg }}>
+        {/* Header */}
+        <div
+          style={{
+            padding: '20px 20px 12px',
+            borderBottom: `1px solid ${COLORS.border}`,
+            background: COLORS.paper,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div
+                style={{
+                  fontSize: 10,
+                  letterSpacing: 2,
+                  color: COLORS.inkLight,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Library
+              </div>
+              <div
+                style={{
+                  fontFamily: FONTS.heading,
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: COLORS.ink,
+                }}
+              >
+                えほん記録帳
+              </div>
+            </div>
+            <button
+              onClick={() => setScanning(true)}
+              disabled={loading}
+              style={{
+                background: COLORS.accent,
+                border: 'none',
+                borderRadius: 12,
+                padding: '10px 18px',
+                color: '#fff',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontFamily: FONTS.body,
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              {loading ? '読込中…' : '📷 スキャン'}
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div style={{ display: 'flex', gap: 16, marginTop: 14 }}>
+            {(
+              [
+                { label: '借り中', value: borrowing.length, color: COLORS.accent },
+                { label: '読了', value: history.length, color: COLORS.green },
+                { label: '合計', value: books.length, color: COLORS.inkLight },
+              ] as const
+            ).map((s) => (
+              <div key={s.label} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: COLORS.inkLight }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div
+          style={{
+            display: 'flex',
+            borderBottom: `1px solid ${COLORS.border}`,
+            background: COLORS.paper,
+          }}
+        >
+          <button style={TAB_STYLE(tab === 'borrowing')} onClick={() => setTab('borrowing')}>
+            借り中 ({borrowing.length})
+          </button>
+          <button style={TAB_STYLE(tab === 'history')} onClick={() => setTab('history')}>
+            読了 ({history.length})
+          </button>
+          <button style={TAB_STYLE(tab === 'search')} onClick={() => setTab('search')}>
+            🔍 検索
+          </button>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: '16px 16px 100px' }}>
+          {tab === 'search' && (
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="タイトル・著者・メモで検索…"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: `1.5px solid ${COLORS.border}`,
+                borderRadius: 10,
+                background: COLORS.paper,
+                fontSize: 15,
+                color: COLORS.ink,
+                marginBottom: 12,
+                fontFamily: FONTS.body,
+              }}
+              autoFocus
+            />
+          )}
+
+          {tab === 'search' && query && searchResults.length === 0 && (
+            <div
+              style={{ textAlign: 'center', color: COLORS.inkLight, padding: 32, fontSize: 14 }}
+            >
+              「{query}」は見つかりませんでした
+            </div>
+          )}
+
+          {visibleBooks.map((book) => (
+            <div key={book.id} className="card-enter" style={{ marginBottom: 10 }}>
+              <BookCard book={book} onReturn={handleReturn} onEdit={setEditBook} />
+            </div>
+          ))}
+
+          {tab === 'borrowing' && borrowing.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: COLORS.inkLight }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📚</div>
+              <div
+                style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink, marginBottom: 6 }}
+              >
+                借り中の本はありません
+              </div>
+              <div style={{ fontSize: 13 }}>上の「スキャン」ボタンで本を登録しましょう</div>
+            </div>
+          )}
+
+          {tab === 'history' && history.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: COLORS.inkLight }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🌱</div>
+              <div style={{ fontSize: 13 }}>返却した本がここに表示されます</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {scanning && <ScannerView onDetected={handleDetected} onClose={() => setScanning(false)} />}
+
+      {editBook && (
+        <BookSheet book={editBook} onSave={handleSave} onCancel={() => setEditBook(null)} />
+      )}
+
+      {toast && <Toast message={toast} />}
+    </>
+  );
+};
