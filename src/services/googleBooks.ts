@@ -14,8 +14,13 @@ interface GoogleBooksResponse {
 }
 
 export const fetchBookInfo = async (isbn: string): Promise<BookInfo | null> => {
-  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&langRestrict=ja`;
+  const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
+  const keyParam = apiKey ? `&key=${apiKey}` : '';
+  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}${keyParam}`;
   const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Books API ${res.status}`);
+  }
   const data: GoogleBooksResponse = await res.json();
 
   if (!data.items || data.items.length === 0) return null;

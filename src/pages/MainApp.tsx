@@ -57,7 +57,7 @@ export const MainApp = ({ auth }: Props) => {
     try {
       const info = await fetchBookInfo(isbn);
       if (!info) {
-        showToast('書籍情報が見つかりませんでした');
+        showToast('この本の情報は見つかりませんでした');
         return;
       }
       setEditBook({
@@ -68,8 +68,13 @@ export const MainApp = ({ auth }: Props) => {
         rating: 0,
         memo: '',
       });
-    } catch {
-      showToast('書籍情報の取得に失敗しました');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.includes('429')) {
+        showToast('検索の上限に達しました。しばらくしてからお試しください');
+      } else {
+        showToast('検索中にエラーが発生しました。通信状況をご確認ください');
+      }
     } finally {
       setLoading(false);
     }
