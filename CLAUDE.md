@@ -55,4 +55,6 @@ See `docs/TESTING.md` for the full policy. Key rules:
 
 ## Environment
 
-Copy `.env.example` to `.env` and set `VITE_GOOGLE_CLIENT_ID` to enable sign-in. Without it the app runs in localStorage-only mode. The OAuth consent screen can stay in **Testing** mode on Google Cloud Console (no verification needed for personal/family use).
+Copy `.env.example` to `.env` and set `VITE_GOOGLE_CLIENT_ID` to enable sign-in. Without it the app runs in localStorage-only mode.
+
+**OAuth consent screen:** Keep in **Testing** mode on Google Cloud Console and add your own Google account as a test user. Drive sync is intended for the owner's personal multi-device use only (no sharing). External visitors to the deployed site use localStorage mode without signing in and do not need OAuth access. The scopes used (`drive.file`, `calendar.events`) are sensitive but do not require verification in Testing mode.
