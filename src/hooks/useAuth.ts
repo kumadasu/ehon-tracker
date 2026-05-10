@@ -1,59 +1,67 @@
 import { useState, useEffect } from 'react';
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  type User,
-} from 'firebase/auth';
-import { auth, isConfigured } from '../services/firebase';
+import { requestAccessToken, getCachedToken, revokeToken } from '../services/gis';
+import { findOrCreateFile } from '../services/driveStorage';
 
-// Calendar scope requested at sign-in to allow creating return-date events
-const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
 export interface AuthState {
-  user: User | null;
-  calendarToken: string | null;
+  accessToken: string | null;
+  driveFileId: string | null;
   loading: boolean;
-  firebaseEnabled: boolean;
+  enabled: boolean; // false when VITE_GOOGLE_CLIENT_ID is not configured
 }
 
-export const useAuth = (): AuthState & { signIn: () => Promise<void>; signOut: () => Promise<void> } => {
-  const [user, setUser] = useState<User | null>(null);
-  const [calendarToken, setCalendarToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(isConfigured);
+export const useAuth = (): AuthState & {
+  signIn: () => Promise<void>;
+  signOut: () => void;
+} => {
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [driveFileId, setDriveFileId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
+  // Restore session from sessionStorage on mount
   useEffect(() => {
-    if (!auth) return;
+    if (!CLIENT_ID) return;
+    const cached = getCachedToken();
+    if (!cached) return;
 
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-
-    return unsub;
+    setLoading(true);
+    findOrCreateFile(cached)
+      .then((fileId) => {
+        setAccessToken(cached);
+        setDriveFileId(fileId);
+      })
+      .catch(() => {
+        // Cached token likely expired; clear it silently
+        sessionStorage.clear();
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const signIn = async () => {
-    if (!auth) return;
-    const provider = new GoogleAuthProvider();
-    provider.addScope(CALENDAR_SCOPE);
-    const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    setCalendarToken(credential?.accessToken ?? null);
+    if (!CLIENT_ID) return;
+    setLoading(true);
+    try {
+      const token = await requestAccessToken(CLIENT_ID);
+      const fileId = await findOrCreateFile(token);
+      setAccessToken(token);
+      setDriveFileId(fileId);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const signOut = async () => {
-    if (!auth) return;
-    await firebaseSignOut(auth);
-    setCalendarToken(null);
+  const signOut = () => {
+    if (accessToken) revokeToken(accessToken);
+    setAccessToken(null);
+    setDriveFileId(null);
   };
 
   return {
-    user,
-    calendarToken,
+    accessToken,
+    driveFileId,
     loading,
-    firebaseEnabled: isConfigured,
+    enabled: Boolean(CLIENT_ID),
     signIn,
     signOut,
   };

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { User } from 'firebase/auth';
+import type { AuthState } from '../hooks/useAuth';
 import type { Book } from '../types';
 import { COLORS, FONTS } from '../constants/theme';
 import { today, addDays } from '../utils/dateUtils';
@@ -15,11 +15,7 @@ type Tab = 'borrowing' | 'history' | 'search';
 type EditableBook = Partial<Book> & { title: string; authors: string; isbn: string };
 
 interface Props {
-  user: User | null;
-  calendarToken: string | null;
-  firebaseEnabled: boolean;
-  onSignIn: () => Promise<void>;
-  onSignOut: () => Promise<void>;
+  auth: AuthState & { signIn: () => Promise<void>; signOut: () => void };
 }
 
 const TAB_STYLE = (active: boolean): React.CSSProperties => ({
@@ -36,8 +32,13 @@ const TAB_STYLE = (active: boolean): React.CSSProperties => ({
   fontFamily: FONTS.body,
 });
 
-export const MainApp = ({ user, calendarToken, firebaseEnabled, onSignIn, onSignOut }: Props) => {
-  const { books, add, update, markReturned } = useBooks(user?.uid ?? null);
+export const MainApp = ({ auth }: Props) => {
+  const drive =
+    auth.accessToken && auth.driveFileId
+      ? { accessToken: auth.accessToken, driveFileId: auth.driveFileId }
+      : null;
+
+  const { books, add, update, markReturned } = useBooks(drive);
   const [tab, setTab] = useState<Tab>('borrowing');
   const [scanning, setScanning] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -97,8 +98,7 @@ export const MainApp = ({ user, calendarToken, firebaseEnabled, onSignIn, onSign
   const history = books.filter((b) => b.returned);
   const searchResults = query.trim()
     ? books.filter(
-        (b) =>
-          b.title.includes(query) || b.authors.includes(query) || b.memo.includes(query)
+        (b) => b.title.includes(query) || b.authors.includes(query) || b.memo.includes(query)
       )
     : [];
 
@@ -139,22 +139,17 @@ export const MainApp = ({ user, calendarToken, firebaseEnabled, onSignIn, onSign
                 Library
               </div>
               <div
-                style={{
-                  fontFamily: FONTS.heading,
-                  fontSize: 22,
-                  fontWeight: 700,
-                  color: COLORS.ink,
-                }}
+                style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 700, color: COLORS.ink }}
               >
                 えほん記録帳
               </div>
             </div>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {firebaseEnabled && (
-                user ? (
+              {auth.enabled && (
+                auth.accessToken ? (
                   <button
-                    onClick={onSignOut}
-                    title={user.displayName ?? 'Sign out'}
+                    onClick={auth.signOut}
                     style={{
                       background: 'none',
                       border: `1px solid ${COLORS.border}`,
@@ -163,19 +158,13 @@ export const MainApp = ({ user, calendarToken, firebaseEnabled, onSignIn, onSign
                       fontSize: 11,
                       color: COLORS.inkLight,
                       cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
                     }}
                   >
-                    {user.photoURL && (
-                      <img src={user.photoURL} alt="" width={18} height={18} style={{ borderRadius: '50%' }} />
-                    )}
-                    サインアウト
+                    ☁️ 同期中 · サインアウト
                   </button>
                 ) : (
                   <button
-                    onClick={onSignIn}
+                    onClick={auth.signIn}
                     style={{
                       background: 'none',
                       border: `1px solid ${COLORS.border}`,
@@ -186,7 +175,7 @@ export const MainApp = ({ user, calendarToken, firebaseEnabled, onSignIn, onSign
                       cursor: 'pointer',
                     }}
                   >
-                    サインイン
+                    ☁️ バックアップ
                   </button>
                 )
               )}
@@ -289,9 +278,7 @@ export const MainApp = ({ user, calendarToken, firebaseEnabled, onSignIn, onSign
           {tab === 'borrowing' && borrowing.length === 0 && (
             <div style={{ textAlign: 'center', padding: '48px 20px', color: COLORS.inkLight }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>📚</div>
-              <div
-                style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink, marginBottom: 6 }}
-              >
+              <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink, marginBottom: 6 }}>
                 借り中の本はありません
               </div>
               <div style={{ fontSize: 13 }}>上の「スキャン」ボタンで本を登録しましょう</div>
@@ -312,7 +299,7 @@ export const MainApp = ({ user, calendarToken, firebaseEnabled, onSignIn, onSign
       {editBook && (
         <BookSheet
           book={editBook}
-          calendarToken={calendarToken}
+          calendarToken={auth.accessToken}
           onSave={handleSave}
           onCancel={() => setEditBook(null)}
           onToast={showToast}

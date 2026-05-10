@@ -1,88 +1,100 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  collection,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  writeBatch,
-} from 'firebase/firestore';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Book } from '../types';
 import { loadBooks, saveBooks, addBook, updateBook, removeBook } from '../services/storage';
-import { db } from '../services/firebase';
+import { readDriveBooks, writeDriveBooks } from '../services/driveStorage';
 
-const booksCol = (uid: string) => collection(db!, 'users', uid, 'books');
+interface DriveContext {
+  accessToken: string;
+  driveFileId: string;
+}
 
-// Migrate any books stored locally to Firestore on first sign-in
-const migrateLocalToFirestore = async (uid: string) => {
-  const local = loadBooks();
-  if (local.length === 0) return;
-  const batch = writeBatch(db!);
-  local.forEach((book) => {
-    batch.set(doc(booksCol(uid), book.id), book);
-  });
-  await batch.commit();
-  saveBooks([]); // clear localStorage after migration
-};
+// Write debounce: wait 800ms after the last change before writing to Drive
+const WRITE_DEBOUNCE_MS = 800;
 
-export const useBooks = (uid: string | null) => {
+export const useBooks = (drive: DriveContext | null) => {
   const [books, setBooks] = useState<Book[]>(() => loadBooks());
+  const pendingWrite = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // When drive context becomes available, load from Drive and migrate local data
   useEffect(() => {
-    if (!uid || !db) return;
+    if (!drive) return;
 
-    // Migrate localStorage data to Firestore, then listen for real-time updates
-    migrateLocalToFirestore(uid).catch(console.error);
+    const { accessToken, driveFileId } = drive;
 
-    const unsub = onSnapshot(booksCol(uid), (snap) => {
-      const firestoreBooks = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Book);
-      setBooks(firestoreBooks);
-    });
+    readDriveBooks(accessToken, driveFileId).then((driveBooks) => {
+      const localBooks = loadBooks();
 
-    return unsub;
-  }, [uid]);
-
-  const add = useCallback(
-    async (book: Book) => {
-      if (uid && db) {
-        await setDoc(doc(booksCol(uid), book.id), book);
+      if (driveBooks.length === 0 && localBooks.length > 0) {
+        // Migrate localStorage data to Drive on first sign-in
+        writeDriveBooks(accessToken, driveFileId, localBooks).then(() => {
+          saveBooks([]); // clear localStorage after migration
+        });
+        setBooks(localBooks);
       } else {
-        setBooks((prev) => addBook(prev, book));
+        setBooks(driveBooks);
+      }
+    });
+  }, [drive?.driveFileId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const persist = useCallback(
+    (updated: Book[]) => {
+      if (drive) {
+        // Debounce Drive writes to avoid hammering the API on rapid changes
+        if (pendingWrite.current) clearTimeout(pendingWrite.current);
+        pendingWrite.current = setTimeout(() => {
+          writeDriveBooks(drive.accessToken, drive.driveFileId, updated);
+        }, WRITE_DEBOUNCE_MS);
+      } else {
+        saveBooks(updated);
       }
     },
-    [uid]
+    [drive]
+  );
+
+  const add = useCallback(
+    (book: Book) => {
+      setBooks((prev) => {
+        const next = addBook(prev, book);
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
   );
 
   const update = useCallback(
-    async (book: Book) => {
-      if (uid && db) {
-        await updateDoc(doc(booksCol(uid), book.id), { ...book });
-      } else {
-        setBooks((prev) => updateBook(prev, book));
-      }
+    (book: Book) => {
+      setBooks((prev) => {
+        const next = updateBook(prev, book);
+        persist(next);
+        return next;
+      });
     },
-    [uid]
+    [persist]
   );
 
   const remove = useCallback(
-    async (id: string) => {
-      if (uid && db) {
-        await deleteDoc(doc(booksCol(uid), id));
-      } else {
-        setBooks((prev) => removeBook(prev, id));
-      }
+    (id: string) => {
+      setBooks((prev) => {
+        const next = removeBook(prev, id);
+        persist(next);
+        return next;
+      });
     },
-    [uid]
+    [persist]
   );
 
   const markReturned = useCallback(
-    async (id: string) => {
-      const book = books.find((b) => b.id === id);
-      if (!book) return;
-      await update({ ...book, returned: true });
+    (id: string) => {
+      setBooks((prev) => {
+        const book = prev.find((b) => b.id === id);
+        if (!book) return prev;
+        const next = updateBook(prev, { ...book, returned: true });
+        persist(next);
+        return next;
+      });
     },
-    [books, update]
+    [persist]
   );
 
   return { books, add, update, remove, markReturned };
