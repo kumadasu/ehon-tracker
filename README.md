@@ -1,73 +1,44 @@
-# React + TypeScript + Vite
+# ehon-tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web app for managing your children's picture book collection. Scan barcodes to look up ISBNs and automatically fetch book details from Google Books.
 
-Currently, two official plugins are available:
+**https://ehon.kumadasu.com**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- Barcode scanning or manual ISBN entry
+- Automatic book details via Google Books API
+- Track read/unread/favorite status
+- Google Drive sync for multi-device access
+- Google Calendar integration for read-aloud logs
+- Works offline with localStorage — Google sign-in is optional
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Setup
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+```bash
+pnpm install
+cp .env.example .env
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Set `VITE_GOOGLE_CLIENT_ID` in `.env` to enable Google Drive / Calendar sync. Without it the app runs in localStorage-only mode.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x';
-import reactDom from 'eslint-plugin-react-dom';
+## Commands
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+```bash
+pnpm dev      # start dev server (http://localhost:5173)
+pnpm build    # production build
+pnpm test     # run tests
+pnpm lint     # ESLint
+pnpm format   # Prettier
 ```
+
+## Stack
+
+- React 19 + TypeScript + Vite
+- PWA (offline support)
+- Google Identity Services (OAuth)
+- Google Books / Drive / Calendar APIs (fetch, no SDK)
+- @zxing/browser (barcode scanning)
+- Vitest + Testing Library
+- Cloudflare Pages
