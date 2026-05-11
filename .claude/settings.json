@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=$(jq -r '.tool_input.file_path // empty'); [ -n \"$file\" ] && pnpm exec prettier --write \"$file\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=$(jq -r '.tool_input.file_path // empty'); if echo \"$file\" | grep -qE '\\.env(\\..*)?$'; then echo 'Blocked: .env files must not be edited directly'; exit 2; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
