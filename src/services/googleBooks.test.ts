@@ -1,11 +1,13 @@
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { fetchBookInfo } from './googleBooks';
 
-// Mock fetch because Google Books API is an external HTTP dependency
-vi.stubGlobal('fetch', vi.fn());
+beforeEach(() => {
+  // Mock fetch because Google Books API is an external HTTP dependency
+  vi.stubGlobal('fetch', vi.fn());
+});
 
 afterEach(() => {
-  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 const mockFetch = (body: unknown, status = 200) =>
