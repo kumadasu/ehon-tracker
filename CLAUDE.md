@@ -15,6 +15,7 @@ pnpm coverage     # Vitest with coverage report
 ```
 
 Run a single test file:
+
 ```bash
 pnpm test src/utils/dateUtils.test.ts
 ```
@@ -22,6 +23,7 @@ pnpm test src/utils/dateUtils.test.ts
 ## Architecture
 
 **Storage is dual-mode.** All data flows through `useBooks(drive)`:
+
 - `drive = null` → reads/writes `localStorage` via `src/services/storage.ts`
 - `drive = { accessToken, driveFileId }` → reads/writes `ehon-books.json` in the user's Google Drive via `src/services/driveStorage.ts` (Drive REST API, no SDK)
 
@@ -32,6 +34,7 @@ Drive writes are debounced 800 ms. On first sign-in, any existing localStorage d
 **Google Identity Services (GIS)** is loaded as a CDN script in `index.html` (not an npm package). Its types are declared in `src/types/google.d.ts`. `src/services/gis.ts` wraps `google.accounts.oauth2.initTokenClient` into a Promise-based `requestAccessToken()`.
 
 **External API calls** (all `fetch`, no SDK):
+
 - `src/services/googleBooks.ts` — Google Books API (no key required)
 - `src/services/driveStorage.ts` — Drive v3 REST API (`drive.file` scope)
 - `src/services/googleCalendar.ts` — Calendar v3 REST API (`calendar.events` scope)
@@ -48,6 +51,7 @@ Drive writes are debounced 800 ms. On first sign-in, any existing localStorage d
 ## Testing conventions
 
 See `docs/TESTING.md` for the full policy. Key rules:
+
 - Test names: `"when [condition], it should [expected result]"`
 - Structure: `// Arrange / // Act / // Assert` comments
 - Mock only at external boundaries (HTTP, localStorage, datetime). If >3 mocks are needed, reconsider the design.

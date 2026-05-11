@@ -17,7 +17,7 @@ export const useAuth = (): AuthState & {
 } => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [driveFileId, setDriveFileId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => Boolean(CLIENT_ID && getCachedToken()));
 
   // Restore session from sessionStorage on mount
   useEffect(() => {
@@ -25,7 +25,6 @@ export const useAuth = (): AuthState & {
     const cached = getCachedToken();
     if (!cached) return;
 
-    setLoading(true);
     findOrCreateFile(cached)
       .then((fileId) => {
         setAccessToken(cached);

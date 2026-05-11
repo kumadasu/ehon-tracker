@@ -41,7 +41,11 @@ export const BookSheet = ({ book, calendarToken, onSave, onCancel, onToast }: Pr
     setAddingCalendar(true);
     const result = await addReturnEvent(savedBook, calendarToken);
     setAddingCalendar(false);
-    onToast(result.success ? '📅 カレンダーに登録しました' : `カレンダー登録に失敗しました: ${result.error}`);
+    onToast(
+      result.success
+        ? '📅 カレンダーに登録しました'
+        : `カレンダー登録に失敗しました: ${result.error}`
+    );
   };
 
   const handleSave = () => {
@@ -113,7 +117,11 @@ export const BookSheet = ({ book, calendarToken, onSave, onCancel, onToast }: Pr
             }}
           >
             {book.thumbnail ? (
-              <img src={book.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img
+                src={book.thumbnail}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             ) : (
               '📚'
             )}
