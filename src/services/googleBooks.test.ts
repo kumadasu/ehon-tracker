@@ -136,4 +136,40 @@ describe('fetchBookInfo', () => {
       expect(calledUrl).toContain(`key=${CONFIGURED_KEY}`);
     },
   );
+
+  it('when title is absent, it should return "不明"', async () => {
+    // Arrange
+    mockFetch({ items: [{ volumeInfo: makeVolumeInfo({ title: '' }) }] });
+
+    // Act
+    const result = await fetchBookInfo('9784001140309');
+
+    // Assert
+    expect(result!.title).toBe('不明');
+  });
+
+  it('when imageLinks is absent, thumbnail should be null', async () => {
+    // Arrange
+    mockFetch({ items: [{ volumeInfo: makeVolumeInfo({ imageLinks: undefined }) }] });
+
+    // Act
+    const result = await fetchBookInfo('9784001140309');
+
+    // Assert
+    expect(result!.thumbnail).toBeNull();
+  });
+
+  it('when publisher and description are absent, they should default to empty strings', async () => {
+    // Arrange
+    mockFetch({
+      items: [{ volumeInfo: makeVolumeInfo({ publisher: undefined, description: undefined }) }],
+    });
+
+    // Act
+    const result = await fetchBookInfo('9784001140309');
+
+    // Assert
+    expect(result!.publisher).toBe('');
+    expect(result!.description).toBe('');
+  });
 });
