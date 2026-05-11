@@ -1,8 +1,11 @@
-minimumReleaseAge: '7 days'
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - '@typescript-eslint/visitor-keys'
+
 allowBuilds:
   '@firebase/util': true
+  esbuild: true
   msw: true
   protobufjs: true
 packages:
   - "."
-
