@@ -43,7 +43,11 @@ export const BookCard = ({ book, onReturn, onEdit }: Props) => {
         }}
       >
         {book.thumbnail ? (
-          <img src={book.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img
+            src={book.thumbnail}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         ) : (
           '📚'
         )}

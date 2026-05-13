@@ -119,7 +119,7 @@ describe('fetchBookInfo', () => {
       // Assert
       const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
       expect(calledUrl).not.toContain('key=');
-    },
+    }
   );
 
   it.skipIf(!CONFIGURED_KEY)(
@@ -134,7 +134,7 @@ describe('fetchBookInfo', () => {
       // Assert
       const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
       expect(calledUrl).toContain(`key=${CONFIGURED_KEY}`);
-    },
+    }
   );
 
   it('when title is absent, it should return "不明"', async () => {

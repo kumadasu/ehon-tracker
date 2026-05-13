@@ -32,7 +32,10 @@ export const addReturnEvent = async (book: Book, accessToken: string): Promise<C
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    return { success: false, error: (err as { error?: { message?: string } }).error?.message ?? 'Calendar API error' };
+    return {
+      success: false,
+      error: (err as { error?: { message?: string } }).error?.message ?? 'Calendar API error',
+    };
   }
 
   const data = (await res.json()) as { id: string };

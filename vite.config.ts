@@ -54,5 +54,11 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
+    coverage: {
+      thresholds: {
+        branches: 90,
+        perFile: true,
+      },
+    },
   },
 });

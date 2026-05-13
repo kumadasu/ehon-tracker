@@ -144,15 +144,20 @@ export const MainApp = ({ auth }: Props) => {
                 Library
               </div>
               <div
-                style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 700, color: COLORS.ink }}
+                style={{
+                  fontFamily: FONTS.heading,
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: COLORS.ink,
+                }}
               >
                 えほん記録帳
               </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {auth.enabled && (
-                auth.accessToken ? (
+              {auth.enabled &&
+                (auth.accessToken ? (
                   <button
                     onClick={auth.signOut}
                     style={{
@@ -182,8 +187,7 @@ export const MainApp = ({ auth }: Props) => {
                   >
                     ☁️ バックアップ
                   </button>
-                )
-              )}
+                ))}
               <button
                 onClick={() => setScanning(true)}
                 disabled={loading}
@@ -267,9 +271,7 @@ export const MainApp = ({ auth }: Props) => {
           )}
 
           {tab === 'search' && query && searchResults.length === 0 && (
-            <div
-              style={{ textAlign: 'center', color: COLORS.inkLight, padding: 32, fontSize: 14 }}
-            >
+            <div style={{ textAlign: 'center', color: COLORS.inkLight, padding: 32, fontSize: 14 }}>
               「{query}」は見つかりませんでした
             </div>
           )}
