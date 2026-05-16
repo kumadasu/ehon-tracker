@@ -306,7 +306,6 @@ export const MainApp = ({ auth }: Props) => {
       {editBook && (
         <BookSheet
           book={editBook}
-          calendarToken={auth.accessToken}
           onSave={handleSave}
           onCancel={() => setEditBook(null)}
           onToast={showToast}
