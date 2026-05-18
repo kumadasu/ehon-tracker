@@ -43,7 +43,7 @@ describe('buildGoogleCalendarUrl', () => {
     expect(url).toContain('action=TEMPLATE');
   });
 
-  it('when called, the dates param should use the due date in YYYYMMDD format', () => {
+  it('when called, the dates param should use the due date as a 09:00–12:00 timed event', () => {
     // Arrange
     const books = [makeBook({ dueDate: '2024-02-01' })];
 
@@ -51,7 +51,7 @@ describe('buildGoogleCalendarUrl', () => {
     const url = buildGoogleCalendarUrl(books);
 
     // Assert
-    expect(url).toContain('dates=20240201%2F20240201');
+    expect(url).toContain('dates=20240201T090000%2F20240201T120000');
   });
 
   it('when called with one book, the text param should include the book title', () => {
@@ -100,7 +100,7 @@ describe('buildIcsContent', () => {
     expect(ics).toMatch(/^BEGIN:VCALENDAR/);
   });
 
-  it('when called, DTSTART should equal the due date in YYYYMMDD format', () => {
+  it('when called, DTSTART should be 09:00 on the due date', () => {
     // Arrange
     const books = [makeBook({ dueDate: '2024-02-01' })];
 
@@ -108,10 +108,10 @@ describe('buildIcsContent', () => {
     const ics = buildIcsContent(books);
 
     // Assert
-    expect(ics).toContain('DTSTART;VALUE=DATE:20240201');
+    expect(ics).toContain('DTSTART:20240201T090000');
   });
 
-  it('when called, DTEND should be the day after the due date', () => {
+  it('when called, DTEND should be 12:00 on the due date', () => {
     // Arrange
     const books = [makeBook({ dueDate: '2024-02-01' })];
 
@@ -119,7 +119,7 @@ describe('buildIcsContent', () => {
     const ics = buildIcsContent(books);
 
     // Assert
-    expect(ics).toContain('DTEND;VALUE=DATE:20240202');
+    expect(ics).toContain('DTEND:20240201T120000');
   });
 
   it('when called, SUMMARY should include the book title', () => {
@@ -131,17 +131,6 @@ describe('buildIcsContent', () => {
 
     // Assert
     expect(ics).toContain('ノンタン');
-  });
-
-  it('when the due date is the last day of a month, DTEND should roll over to the next month', () => {
-    // Arrange
-    const books = [makeBook({ dueDate: '2024-01-31' })];
-
-    // Act
-    const ics = buildIcsContent(books);
-
-    // Assert
-    expect(ics).toContain('DTEND;VALUE=DATE:20240201');
   });
 
   it('when called with multiple books, SUMMARY should contain the book count', () => {
