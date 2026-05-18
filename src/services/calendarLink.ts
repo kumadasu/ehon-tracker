@@ -11,7 +11,7 @@ export const buildGoogleCalendarUrl = (books: Book[]): string => {
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: summary(books),
-    dates: `${date}/${date}`,
+    dates: `${date}T090000/${date}T120000`,
     details: descriptionLines(books),
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
@@ -19,9 +19,6 @@ export const buildGoogleCalendarUrl = (books: Book[]): string => {
 
 export const buildIcsContent = (books: Book[]): string => {
   const date = books[0].dueDate.replace(/-/g, '');
-  const next = new Date(`${books[0].dueDate}T00:00:00`);
-  next.setDate(next.getDate() + 1);
-  const endDate = next.toISOString().slice(0, 10).replace(/-/g, '');
   const desc = descriptionLines(books).replace(/\n/g, '\\n');
 
   return [
@@ -29,8 +26,8 @@ export const buildIcsContent = (books: Book[]): string => {
     'VERSION:2.0',
     'PRODID:-//ehon-tracker//EN',
     'BEGIN:VEVENT',
-    `DTSTART;VALUE=DATE:${date}`,
-    `DTEND;VALUE=DATE:${endDate}`,
+    `DTSTART:${date}T090000`,
+    `DTEND:${date}T120000`,
     `SUMMARY:${summary(books)}`,
     `DESCRIPTION:${desc}`,
     'BEGIN:VALARM',
