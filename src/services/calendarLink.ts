@@ -1,21 +1,27 @@
 import type { Book } from '../types';
 
-export const buildGoogleCalendarUrl = (book: Book): string => {
-  const date = book.dueDate.replace(/-/g, '');
+export const buildGoogleCalendarUrl = (books: Book[]): string => {
+  const date = books[0].dueDate.replace(/-/g, '');
+  const text = books.length === 1 ? `返却期限：${books[0].title}` : `返却期限（${books.length}冊）`;
+  const details = `図書館の絵本の返却期限です。\n` + books.map((b) => `・${b.title}`).join('\n');
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: `📚 返却期限：${book.title}`,
+    text,
     dates: `${date}/${date}`,
-    details: `図書館の絵本の返却期限です。\nISBN: ${book.isbn}`,
+    details,
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 };
 
-export const buildIcsContent = (book: Book): string => {
-  const date = book.dueDate.replace(/-/g, '');
-  const next = new Date(`${book.dueDate}T00:00:00`);
+export const buildIcsContent = (books: Book[]): string => {
+  const date = books[0].dueDate.replace(/-/g, '');
+  const next = new Date(`${books[0].dueDate}T00:00:00`);
   next.setDate(next.getDate() + 1);
   const endDate = next.toISOString().slice(0, 10).replace(/-/g, '');
+  const summary =
+    books.length === 1 ? `返却期限：${books[0].title}` : `返却期限（${books.length}冊）`;
+  const description =
+    `図書館の絵本の返却期限です。\\n` + books.map((b) => `・${b.title}`).join('\\n');
 
   return [
     'BEGIN:VCALENDAR',
@@ -24,8 +30,8 @@ export const buildIcsContent = (book: Book): string => {
     'BEGIN:VEVENT',
     `DTSTART;VALUE=DATE:${date}`,
     `DTEND;VALUE=DATE:${endDate}`,
-    `SUMMARY:📚 返却期限：${book.title}`,
-    `DESCRIPTION:図書館の絵本の返却期限です。\\nISBN: ${book.isbn}`,
+    `SUMMARY:${summary}`,
+    `DESCRIPTION:${description}`,
     'BEGIN:VALARM',
     'TRIGGER:-PT9H',
     'ACTION:DISPLAY',
@@ -36,13 +42,13 @@ export const buildIcsContent = (book: Book): string => {
   ].join('\r\n');
 };
 
-export const downloadIcs = (book: Book): void => {
-  const content = buildIcsContent(book);
+export const downloadIcs = (books: Book[]): void => {
+  const content = buildIcsContent(books);
   const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `返却期限_${book.title}.ics`;
+  a.download = `返却期限_${books[0].dueDate}.ics`;
   a.click();
   URL.revokeObjectURL(url);
 };

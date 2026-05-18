@@ -2,44 +2,18 @@ import { useState } from 'react';
 import type { Book } from '../types';
 import { COLORS, FONTS } from '../constants/theme';
 import { addDays, today } from '../utils/dateUtils';
-import { buildGoogleCalendarUrl, downloadIcs } from '../services/calendarLink';
 import { StarRating } from './StarRating';
 
 interface Props {
   book: Partial<Book> & { title: string; authors: string; isbn: string };
   onSave: (book: Book) => void;
   onCancel: () => void;
-  onToast: (msg: string) => void;
 }
 
-export const BookSheet = ({ book, onSave, onCancel, onToast }: Props) => {
+export const BookSheet = ({ book, onSave, onCancel }: Props) => {
   const [dueDate, setDueDate] = useState(book.dueDate ?? addDays(today(), 14));
   const [rating, setRating] = useState(book.rating ?? 0);
   const [memo, setMemo] = useState(book.memo ?? '');
-
-  const currentBook = (): Book => ({
-    id: book.id ?? Date.now().toString(),
-    isbn: book.isbn,
-    title: book.title,
-    authors: book.authors,
-    thumbnail: book.thumbnail ?? null,
-    publisher: book.publisher ?? '',
-    description: book.description ?? '',
-    borrowedAt: book.borrowedAt ?? today(),
-    returned: book.returned ?? false,
-    dueDate,
-    rating,
-    memo,
-  });
-
-  const handleOpenGoogleCalendar = () => {
-    window.open(buildGoogleCalendarUrl(currentBook()), '_blank', 'noopener,noreferrer');
-  };
-
-  const handleDownloadIcs = () => {
-    downloadIcs(currentBook());
-    onToast('📅 .icsファイルをダウンロードしました');
-  };
 
   const handleSave = () => {
     onSave({
@@ -132,7 +106,7 @@ export const BookSheet = ({ book, onSave, onCancel, onToast }: Props) => {
         {/* Due date */}
         <label style={{ display: 'block', marginBottom: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.inkLight, marginBottom: 6 }}>
-            📅 返却予定日
+            返却予定日
           </div>
           <input
             type="date"
@@ -154,7 +128,7 @@ export const BookSheet = ({ book, onSave, onCancel, onToast }: Props) => {
         {/* Rating */}
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.inkLight, marginBottom: 6 }}>
-            ⭐ 評価
+            評価
           </div>
           <StarRating value={rating} onChange={setRating} />
         </div>
@@ -162,7 +136,7 @@ export const BookSheet = ({ book, onSave, onCancel, onToast }: Props) => {
         {/* Memo */}
         <label style={{ display: 'block', marginBottom: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.inkLight, marginBottom: 6 }}>
-            💬 感想メモ
+            感想メモ
           </div>
           <textarea
             value={memo}
@@ -184,42 +158,6 @@ export const BookSheet = ({ book, onSave, onCancel, onToast }: Props) => {
           />
         </label>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-          <button
-            onClick={handleOpenGoogleCalendar}
-            style={{
-              flex: 1,
-              padding: '11px 8px',
-              background: 'none',
-              color: COLORS.green,
-              border: `1.5px solid ${COLORS.green}`,
-              borderRadius: 12,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: FONTS.body,
-            }}
-          >
-            📅 Googleカレンダー
-          </button>
-          <button
-            onClick={handleDownloadIcs}
-            style={{
-              flex: 1,
-              padding: '11px 8px',
-              background: 'none',
-              color: COLORS.green,
-              border: `1.5px solid ${COLORS.green}`,
-              borderRadius: 12,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: FONTS.body,
-            }}
-          >
-            📥 .ics ダウンロード
-          </button>
-        </div>
         <button
           onClick={handleSave}
           style={{
