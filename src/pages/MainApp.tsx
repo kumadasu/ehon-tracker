@@ -2,8 +2,9 @@ import { useState, useCallback } from 'react';
 import type { AuthState } from '../hooks/useAuth';
 import type { Book } from '../types';
 import { COLORS, FONTS } from '../constants/theme';
-import { today, addDays } from '../utils/dateUtils';
+import { today, addDays, formatDate } from '../utils/dateUtils';
 import { fetchBookInfo } from '../services/googleBooks';
+import { buildGoogleCalendarUrl, downloadIcs } from '../services/calendarLink';
 import { useBooks } from '../hooks/useBooks';
 import { BookCard } from '../components/BookCard';
 import { BookSheet } from '../components/BookSheet';
@@ -107,8 +108,14 @@ export const MainApp = ({ auth }: Props) => {
       )
     : [];
 
-  const visibleBooks =
-    tab === 'borrowing' ? borrowing : tab === 'history' ? history : searchResults;
+  const borrowingByDate = new Map<string, Book[]>();
+  for (const book of borrowing) {
+    const group = borrowingByDate.get(book.dueDate) ?? [];
+    group.push(book);
+    borrowingByDate.set(book.dueDate, group);
+  }
+
+  const visibleBooks = tab === 'history' ? history : searchResults;
 
   return (
     <>
@@ -276,11 +283,90 @@ export const MainApp = ({ auth }: Props) => {
             </div>
           )}
 
-          {visibleBooks.map((book) => (
-            <div key={book.id} className="card-enter" style={{ marginBottom: 10 }}>
-              <BookCard book={book} onReturn={handleReturn} onEdit={setEditBook} />
-            </div>
-          ))}
+          {tab === 'borrowing' &&
+            Array.from(borrowingByDate.entries()).map(([dueDate, books]) => (
+              <div key={dueDate} style={{ marginBottom: 20 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingLeft: 10,
+                    marginBottom: 8,
+                    paddingBottom: 6,
+                    borderLeft: `3px solid ${COLORS.accent}`,
+                    borderBottom: `1px solid ${COLORS.border}`,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink }}>
+                      {formatDate(dueDate)}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: COLORS.accent,
+                        background: COLORS.accentLight,
+                        borderRadius: 10,
+                        padding: '1px 7px',
+                      }}
+                    >
+                      {books.length}冊
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 5 }}>
+                    <button
+                      onClick={() =>
+                        window.open(buildGoogleCalendarUrl(books), '_blank', 'noopener,noreferrer')
+                      }
+                      style={{
+                        background: 'none',
+                        border: `1px solid ${COLORS.border}`,
+                        borderRadius: 6,
+                        padding: '3px 8px',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        color: COLORS.inkLight,
+                        fontFamily: FONTS.body,
+                      }}
+                    >
+                      Googleカレンダー
+                    </button>
+                    <button
+                      onClick={() => {
+                        downloadIcs(books);
+                        showToast('.icsファイルをダウンロードしました');
+                      }}
+                      style={{
+                        background: 'none',
+                        border: `1px solid ${COLORS.border}`,
+                        borderRadius: 6,
+                        padding: '3px 8px',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        color: COLORS.inkLight,
+                        fontFamily: FONTS.body,
+                      }}
+                    >
+                      .ics
+                    </button>
+                  </div>
+                </div>
+                {books.map((book) => (
+                  <div key={book.id} className="card-enter" style={{ marginBottom: 8 }}>
+                    <BookCard book={book} onReturn={handleReturn} onEdit={setEditBook} />
+                  </div>
+                ))}
+              </div>
+            ))}
+
+          {tab !== 'borrowing' &&
+            visibleBooks.map((book) => (
+              <div key={book.id} className="card-enter" style={{ marginBottom: 10 }}>
+                <BookCard book={book} onReturn={handleReturn} onEdit={setEditBook} />
+              </div>
+            ))}
 
           {tab === 'borrowing' && borrowing.length === 0 && (
             <div style={{ textAlign: 'center', padding: '48px 20px', color: COLORS.inkLight }}>
@@ -304,13 +390,7 @@ export const MainApp = ({ auth }: Props) => {
       {scanning && <ScannerView onDetected={handleDetected} onClose={() => setScanning(false)} />}
 
       {editBook && (
-        <BookSheet
-          book={editBook}
-          calendarToken={auth.accessToken}
-          onSave={handleSave}
-          onCancel={() => setEditBook(null)}
-          onToast={showToast}
-        />
+        <BookSheet book={editBook} onSave={handleSave} onCancel={() => setEditBook(null)} />
       )}
 
       {toast && <Toast message={toast} />}
