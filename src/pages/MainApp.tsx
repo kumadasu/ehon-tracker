@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { AuthState } from '../hooks/useAuth';
 import type { Book } from '../types';
 import { COLORS, FONTS } from '../constants/theme';
-import { today, addDays, formatDate } from '../utils/dateUtils';
+import { today, addDays, formatDate, daysLeft } from '../utils/dateUtils';
 import { fetchBookInfo } from '../services/googleBooks';
 import { buildGoogleCalendarUrl, downloadIcs } from '../services/calendarLink';
 import { useBooks } from '../hooks/useBooks';
@@ -314,6 +314,24 @@ export const MainApp = ({ auth }: Props) => {
                     >
                       {books.length}冊
                     </span>
+                    {(() => {
+                      const left = daysLeft(dueDate);
+                      const urgent = left <= 3;
+                      return (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: urgent ? COLORS.accent : COLORS.inkLight,
+                            background: urgent ? COLORS.accentLight : COLORS.bg,
+                            borderRadius: 10,
+                            padding: '1px 7px',
+                          }}
+                        >
+                          {urgent && left <= 0 ? `${Math.abs(left)}日超過` : `あと${left}日`}
+                        </span>
+                      );
+                    })()}
                   </div>
                   <div style={{ display: 'flex', gap: 5 }}>
                     <button

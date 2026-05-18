@@ -1,6 +1,6 @@
 import type { Book } from '../types';
 import { COLORS, FONTS } from '../constants/theme';
-import { formatDate, daysLeft } from '../utils/dateUtils';
+import { daysLeft } from '../utils/dateUtils';
 import { StarRating } from './StarRating';
 
 interface Props {
@@ -86,24 +86,6 @@ export const BookCard = ({ book, onReturn, onEdit }: Props) => {
             "{book.memo}"
           </div>
         ) : null}
-        {!book.returned && (
-          <div
-            style={{
-              marginTop: 6,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              fontSize: 11,
-              fontWeight: 600,
-              color: urgent ? COLORS.accent : COLORS.inkLight,
-              background: urgent ? COLORS.accentLight : COLORS.bg,
-              borderRadius: 20,
-              padding: '2px 8px',
-            }}
-          >
-            {urgent ? '⚠️' : '📅'} 返却 {formatDate(book.dueDate)}（あと{left}日）
-          </div>
-        )}
         {book.returned && (
           <div
             style={{
