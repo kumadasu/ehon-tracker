@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser';
 import { COLORS, FONTS } from '../constants/theme';
 
-const ISBN_REGEX = /^97[89]\d{10}$/;
+const BARCODE_REGEX = /^\d{13}$/;
 
 interface Props {
   onDetected: (isbn: string) => void;
@@ -22,7 +22,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
       .decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
         if (result) {
           const text = result.getText();
-          if (ISBN_REGEX.test(text)) {
+          if (BARCODE_REGEX.test(text)) {
             controlsRef.current?.stop();
             onDetected(text);
           }
@@ -39,9 +39,9 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
   }, [onDetected]);
 
   const handleManualSubmit = () => {
-    const isbn = manualIsbn.trim().replace(/-/g, '');
-    if (ISBN_REGEX.test(isbn)) {
-      onDetected(isbn);
+    const barcode = manualIsbn.trim().replace(/-/g, '');
+    if (BARCODE_REGEX.test(barcode)) {
+      onDetected(barcode);
     }
   };
 
@@ -65,7 +65,9 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
           color: '#fff',
         }}
       >
-        <span style={{ fontFamily: FONTS.body, fontSize: 16 }}>📷 バーコードをスキャン</span>
+        <span style={{ fontFamily: FONTS.body, fontSize: 16 }}>
+          📷 バーコードをスキャン（本・雑誌）
+        </span>
         <button
           onClick={onClose}
           style={{
@@ -124,7 +126,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
                 opacity: 0.8,
               }}
             >
-              本の裏表紙のバーコードに向けてください
+              本・雑誌の裏表紙のバーコードに向けてください
             </div>
           </>
         )}
@@ -143,14 +145,14 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
             }}
           >
             <div style={{ color: '#fff', fontSize: 14, textAlign: 'center', opacity: 0.8 }}>
-              カメラを使用できません。ISBNを手動で入力してください。
+              カメラを使用できません。バーコード番号を手動で入力してください。
             </div>
             <input
               type="text"
               inputMode="numeric"
               value={manualIsbn}
               onChange={(e) => setManualIsbn(e.target.value)}
-              placeholder="978xxxxxxxxxx"
+              placeholder="バーコード番号（13桁）"
               style={{
                 width: '100%',
                 maxWidth: 320,
@@ -164,7 +166,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
             />
             <button
               onClick={handleManualSubmit}
-              disabled={!/^97[89]\d{10}$/.test(manualIsbn.trim().replace(/-/g, ''))}
+              disabled={!BARCODE_REGEX.test(manualIsbn.trim().replace(/-/g, ''))}
               style={{
                 background: COLORS.accent,
                 color: '#fff',
@@ -175,7 +177,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
                 fontWeight: 700,
                 cursor: 'pointer',
                 fontFamily: FONTS.body,
-                opacity: ISBN_REGEX.test(manualIsbn.trim().replace(/-/g, '')) ? 1 : 0.5,
+                opacity: BARCODE_REGEX.test(manualIsbn.trim().replace(/-/g, '')) ? 1 : 0.5,
               }}
             >
               検索する
