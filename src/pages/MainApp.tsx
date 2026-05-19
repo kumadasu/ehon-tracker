@@ -44,6 +44,7 @@ export const MainApp = ({ auth }: Props) => {
   const [scanning, setScanning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editBook, setEditBook] = useState<EditableBook | null>(null);
+  const [isManualEntry, setIsManualEntry] = useState(false);
   const [query, setQuery] = useState('');
   const [toast, setToast] = useState<string | null>(null);
 
@@ -52,23 +53,35 @@ export const MainApp = ({ auth }: Props) => {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const handleDetected = useCallback(async (isbn: string) => {
+  const handleDetected = useCallback(async (barcode: string) => {
     setScanning(false);
     setLoading(true);
     try {
-      const info = await fetchBookInfo(isbn);
-      if (!info) {
-        showToast('この本の情報は見つかりませんでした');
-        return;
+      const info = await fetchBookInfo(barcode);
+      if (info) {
+        setIsManualEntry(false);
+        setEditBook({
+          ...info,
+          borrowedAt: today(),
+          dueDate: addDays(today(), 14),
+          returned: false,
+          rating: 0,
+          memo: '',
+        });
+      } else {
+        setIsManualEntry(true);
+        setEditBook({
+          isbn: barcode,
+          title: '',
+          authors: '',
+          borrowedAt: today(),
+          dueDate: addDays(today(), 14),
+          returned: false,
+          rating: 0,
+          memo: '',
+        });
+        showToast('情報が見つかりませんでした。タイトルを入力してください');
       }
-      setEditBook({
-        ...info,
-        borrowedAt: today(),
-        dueDate: addDays(today(), 14),
-        returned: false,
-        rating: 0,
-        memo: '',
-      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
       if (msg.includes('429')) {
@@ -91,6 +104,7 @@ export const MainApp = ({ auth }: Props) => {
       setTab('borrowing');
     }
     setEditBook(null);
+    setIsManualEntry(false);
   };
 
   const handleReturn = (id: string) => {
@@ -408,7 +422,15 @@ export const MainApp = ({ auth }: Props) => {
       {scanning && <ScannerView onDetected={handleDetected} onClose={() => setScanning(false)} />}
 
       {editBook && (
-        <BookSheet book={editBook} onSave={handleSave} onCancel={() => setEditBook(null)} />
+        <BookSheet
+          book={editBook}
+          isManual={isManualEntry}
+          onSave={handleSave}
+          onCancel={() => {
+            setEditBook(null);
+            setIsManualEntry(false);
+          }}
+        />
       )}
 
       {toast && <Toast message={toast} />}
