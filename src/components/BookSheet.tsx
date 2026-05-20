@@ -6,24 +6,21 @@ import { StarRating } from './StarRating';
 
 interface Props {
   book: Partial<Book> & { title: string; authors: string; isbn: string };
-  isManual?: boolean;
   onSave: (book: Book) => void;
   onCancel: () => void;
 }
 
-export const BookSheet = ({ book, isManual = false, onSave, onCancel }: Props) => {
+export const BookSheet = ({ book, onSave, onCancel }: Props) => {
   const [dueDate, setDueDate] = useState(book.dueDate ?? addDays(today(), 14));
   const [rating, setRating] = useState(book.rating ?? 0);
   const [memo, setMemo] = useState(book.memo ?? '');
-  const [title, setTitle] = useState(book.title);
-  const [authors, setAuthors] = useState(book.authors);
 
   const handleSave = () => {
     onSave({
       id: book.id ?? Date.now().toString(),
       isbn: book.isbn,
-      title: isManual ? title : book.title,
-      authors: isManual ? authors : book.authors,
+      title: book.title,
+      authors: book.authors,
       thumbnail: book.thumbnail ?? null,
       publisher: book.publisher ?? '',
       description: book.description ?? '',
@@ -96,62 +93,13 @@ export const BookSheet = ({ book, isManual = false, onSave, onCancel }: Props) =
               '📚'
             )}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {isManual ? (
-              <>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="タイトル（必須）"
-                  style={{
-                    width: '100%',
-                    fontFamily: FONTS.body,
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: COLORS.ink,
-                    border: `1.5px solid ${COLORS.border}`,
-                    borderRadius: 6,
-                    padding: '6px 8px',
-                    background: COLORS.bg,
-                    boxSizing: 'border-box',
-                  }}
-                />
-                <input
-                  type="text"
-                  value={authors}
-                  onChange={(e) => setAuthors(e.target.value)}
-                  placeholder="著者・出版社など"
-                  style={{
-                    width: '100%',
-                    fontSize: 13,
-                    color: COLORS.inkLight,
-                    border: `1.5px solid ${COLORS.border}`,
-                    borderRadius: 6,
-                    padding: '5px 8px',
-                    background: COLORS.bg,
-                    marginTop: 6,
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </>
-            ) : (
-              <>
-                <div
-                  style={{
-                    fontFamily: FONTS.body,
-                    fontSize: 16,
-                    fontWeight: 700,
-                    color: COLORS.ink,
-                  }}
-                >
-                  {book.title}
-                </div>
-                <div style={{ fontSize: 13, color: COLORS.inkLight, marginTop: 2 }}>
-                  {book.authors}
-                </div>
-              </>
-            )}
+          <div>
+            <div
+              style={{ fontFamily: FONTS.body, fontSize: 16, fontWeight: 700, color: COLORS.ink }}
+            >
+              {book.title}
+            </div>
+            <div style={{ fontSize: 13, color: COLORS.inkLight, marginTop: 2 }}>{book.authors}</div>
           </div>
         </div>
 
@@ -212,7 +160,6 @@ export const BookSheet = ({ book, isManual = false, onSave, onCancel }: Props) =
 
         <button
           onClick={handleSave}
-          disabled={isManual && title.trim() === ''}
           style={{
             width: '100%',
             padding: '14px',
@@ -222,9 +169,8 @@ export const BookSheet = ({ book, isManual = false, onSave, onCancel }: Props) =
             borderRadius: 12,
             fontSize: 16,
             fontWeight: 700,
-            cursor: isManual && title.trim() === '' ? 'not-allowed' : 'pointer',
+            cursor: 'pointer',
             fontFamily: FONTS.body,
-            opacity: isManual && title.trim() === '' ? 0.5 : 1,
           }}
         >
           保存する
