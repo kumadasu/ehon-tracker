@@ -13,7 +13,13 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const [cameraError, setCameraError] = useState(false);
+  const [manualMode, setManualMode] = useState(false);
   const [manualIsbn, setManualIsbn] = useState('');
+
+  const switchToManual = () => {
+    controlsRef.current?.stop();
+    setManualMode(true);
+  };
 
   useEffect(() => {
     const reader = new BrowserMultiFormatReader();
@@ -66,24 +72,42 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
         }}
       >
         <span style={{ fontFamily: FONTS.body, fontSize: 16 }}>📷 バーコードをスキャン</span>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'rgba(255,255,255,.15)',
-            border: 'none',
-            borderRadius: 20,
-            padding: '4px 14px',
-            color: '#fff',
-            cursor: 'pointer',
-            fontSize: 13,
-          }}
-        >
-          キャンセル
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {!cameraError && !manualMode && (
+            <button
+              onClick={switchToManual}
+              style={{
+                background: 'rgba(255,255,255,.15)',
+                border: 'none',
+                borderRadius: 20,
+                padding: '4px 14px',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: 13,
+              }}
+            >
+              手動で入力
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(255,255,255,.15)',
+              border: 'none',
+              borderRadius: 20,
+              padding: '4px 14px',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+          >
+            キャンセル
+          </button>
+        </div>
       </div>
 
       <div style={{ flex: 1, position: 'relative' }}>
-        {!cameraError && (
+        {!cameraError && !manualMode && (
           <>
             <video
               ref={videoRef}
@@ -129,8 +153,8 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
           </>
         )}
 
-        {/* Manual ISBN fallback shown when camera is unavailable */}
-        {cameraError && (
+        {/* Manual ISBN input: shown when camera is unavailable or user chose manual mode */}
+        {(cameraError || manualMode) && (
           <div
             style={{
               display: 'flex',
@@ -143,7 +167,9 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
             }}
           >
             <div style={{ color: '#fff', fontSize: 14, textAlign: 'center', opacity: 0.8 }}>
-              カメラを使用できません。ISBNを手動で入力してください。
+              {cameraError
+                ? 'カメラを使用できません。ISBNを手動で入力してください。'
+                : 'ISBNを入力してください。'}
             </div>
             <input
               type="text"
