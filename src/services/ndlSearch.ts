@@ -70,6 +70,8 @@ export const searchMagazineIssues = async (
       });
     }
 
+    const monthOf = (v: string) => Number(v.match(/(\d+)月/)?.[1] ?? 0);
+    results.sort((a, b) => monthOf(a.volume) - monthOf(b.volume));
     return results;
   } catch {
     return [];
