@@ -102,7 +102,9 @@ export const BookSheet = ({ book, onSave, onCancel }: Props) => {
             </div>
             <div style={{ fontSize: 13, color: COLORS.inkLight, marginTop: 2 }}>{book.authors}</div>
             {book.volume && (
-              <div style={{ fontSize: 12, color: COLORS.inkLight, marginTop: 2 }}>{book.volume}</div>
+              <div style={{ fontSize: 12, color: COLORS.inkLight, marginTop: 2 }}>
+                {book.volume}
+              </div>
             )}
           </div>
         </div>

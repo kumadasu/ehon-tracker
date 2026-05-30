@@ -55,8 +55,7 @@ export const searchMagazineIssues = async (
       let issn = '';
       let bibId = '';
       for (const idEl of Array.from(item.getElementsByTagNameNS(NS_DC, 'identifier'))) {
-        const type =
-          idEl.getAttributeNS(NS_XSI, 'type') ?? idEl.getAttribute('xsi:type') ?? '';
+        const type = idEl.getAttributeNS(NS_XSI, 'type') ?? idEl.getAttribute('xsi:type') ?? '';
         if (type.includes('ISSN') && !issn) issn = idEl.textContent?.trim() ?? '';
         if (type.includes('NDLBibID') && !bibId) bibId = idEl.textContent?.trim() ?? '';
       }

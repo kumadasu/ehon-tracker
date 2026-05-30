@@ -48,9 +48,7 @@ export const MagazineSearchView = ({ onSelect, onClose }: Props) => {
           background: COLORS.paper,
         }}
       >
-        <span
-          style={{ fontFamily: FONTS.body, fontSize: 16, fontWeight: 700, color: COLORS.ink }}
-        >
+        <span style={{ fontFamily: FONTS.body, fontSize: 16, fontWeight: 700, color: COLORS.ink }}>
           📖 雑誌を検索
         </span>
         <button
@@ -142,9 +140,7 @@ export const MagazineSearchView = ({ onSelect, onClose }: Props) => {
       {/* Results */}
       <div style={{ flex: 1, overflow: 'auto', padding: '8px 16px' }}>
         {searched && !loading && results.length === 0 && (
-          <div
-            style={{ textAlign: 'center', color: COLORS.inkLight, padding: 40, fontSize: 14 }}
-          >
+          <div style={{ textAlign: 'center', color: COLORS.inkLight, padding: 40, fontSize: 14 }}>
             見つかりませんでした
           </div>
         )}

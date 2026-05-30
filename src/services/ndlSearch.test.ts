@@ -89,7 +89,13 @@ describe('searchMagazineIssues', () => {
 
   it('when response contains both series and issue items, it should return only issues', async () => {
     // Arrange
-    mockFetch(rss([seriesItem(), issueItem({ volume: '18巻1号(通号204) 2025年1月' }), issueItem({ volume: '18巻2号(通号205) 2025年2月' })]));
+    mockFetch(
+      rss([
+        seriesItem(),
+        issueItem({ volume: '18巻1号(通号204) 2025年1月' }),
+        issueItem({ volume: '18巻2号(通号205) 2025年2月' }),
+      ])
+    );
 
     // Act
     const results = await searchMagazineIssues('鉄おも', 2025);
