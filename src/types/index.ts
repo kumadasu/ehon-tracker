@@ -11,6 +11,7 @@ export interface Book {
   returned: boolean;
   rating: number; // 0–5
   memo: string;
+  volume?: string; // magazine issue info e.g. "18巻1号(通号204) 2025年1月"
 }
 
 export type BookDraft = Omit<Book, 'id' | 'borrowedAt' | 'returned'> & {

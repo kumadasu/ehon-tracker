@@ -3,6 +3,15 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  server: {
+    proxy: {
+      '/api/ndl': {
+        target: 'https://ndlsearch.ndl.go.jp',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/ndl/, '/api'),
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
