@@ -3,8 +3,9 @@ export async function onRequest(context: {
   params: { path?: string | string[] };
 }): Promise<Response> {
   const url = new URL(context.request.url);
-  const pathParam = context.params.path;
-  const path = Array.isArray(pathParam) ? pathParam.join('/') : (pathParam ?? 'opensearch');
+  const path = Array.isArray(context.params.path)
+    ? context.params.path.join('/')
+    : (context.params.path ?? '');
   const ndlUrl = `https://ndlsearch.ndl.go.jp/api/${path}${url.search}`;
 
   try {

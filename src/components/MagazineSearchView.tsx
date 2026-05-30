@@ -2,21 +2,21 @@ import { useState } from 'react';
 import { COLORS, FONTS } from '../constants/theme';
 import { searchMagazineIssues, type NdlMagazineIssue } from '../services/ndlSearch';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 interface Props {
   onSelect: (issue: NdlMagazineIssue) => void;
   onClose: () => void;
 }
 
 export const MagazineSearchView = ({ onSelect, onClose }: Props) => {
-  const currentYear = new Date().getFullYear();
   const [titleInput, setTitleInput] = useState('');
-  const [year, setYear] = useState(currentYear);
+  const [year, setYear] = useState(CURRENT_YEAR);
   const [results, setResults] = useState<NdlMagazineIssue[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
   const handleSearch = async () => {
-    if (!titleInput.trim()) return;
     setLoading(true);
     setSearched(true);
     const issues = await searchMagazineIssues(titleInput.trim(), year);
@@ -103,7 +103,7 @@ export const MagazineSearchView = ({ onSelect, onClose }: Props) => {
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
             min={1900}
-            max={currentYear + 1}
+            max={CURRENT_YEAR + 1}
             style={{
               width: 90,
               padding: '8px 10px',
@@ -144,9 +144,9 @@ export const MagazineSearchView = ({ onSelect, onClose }: Props) => {
             見つかりませんでした
           </div>
         )}
-        {results.map((issue, i) => (
+        {results.map((issue) => (
           <button
-            key={i}
+            key={issue.volume}
             onClick={() => onSelect(issue)}
             style={{
               width: '100%',

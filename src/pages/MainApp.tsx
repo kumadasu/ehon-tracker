@@ -86,6 +86,7 @@ export const MainApp = ({ auth }: Props) => {
 
   const handleMagazineSelect = useCallback((issue: NdlMagazineIssue) => {
     setShowMagazineSearch(false);
+    const borrowedAt = today();
     setEditBook({
       title: issue.title,
       authors: issue.publisher,
@@ -94,8 +95,8 @@ export const MainApp = ({ auth }: Props) => {
       publisher: issue.publisher,
       thumbnail: null,
       description: '',
-      borrowedAt: today(),
-      dueDate: addDays(today(), 14),
+      borrowedAt,
+      dueDate: addDays(borrowedAt, 14),
       returned: false,
       rating: 0,
       memo: '',

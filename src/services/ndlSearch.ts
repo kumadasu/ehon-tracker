@@ -37,7 +37,7 @@ export const searchMagazineIssues = async (
     const doc = new DOMParser().parseFromString(xml, 'text/xml');
 
     const results: NdlMagazineIssue[] = [];
-    for (const item of Array.from(doc.getElementsByTagName('item'))) {
+    for (const item of doc.getElementsByTagName('item')) {
       const volume = item.getElementsByTagNameNS(NS_DCNDL, 'volume')[0]?.textContent?.trim();
       if (!volume) continue; // series-level records have no volume element
 
@@ -54,7 +54,7 @@ export const searchMagazineIssues = async (
 
       let issn = '';
       let bibId = '';
-      for (const idEl of Array.from(item.getElementsByTagNameNS(NS_DC, 'identifier'))) {
+      for (const idEl of item.getElementsByTagNameNS(NS_DC, 'identifier')) {
         const type = idEl.getAttributeNS(NS_XSI, 'type') ?? idEl.getAttribute('xsi:type') ?? '';
         if (type.includes('ISSN') && !issn) issn = idEl.textContent?.trim() ?? '';
         if (type.includes('NDLBibID') && !bibId) bibId = idEl.textContent?.trim() ?? '';
