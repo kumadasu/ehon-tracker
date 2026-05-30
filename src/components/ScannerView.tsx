@@ -4,6 +4,18 @@ import { COLORS, FONTS } from '../constants/theme';
 
 const ISBN_REGEX = /^97[89]\d{10}$/;
 
+const ghostButtonStyle = {
+  background: 'rgba(255,255,255,.15)',
+  border: 'none',
+  borderRadius: 20,
+  padding: '4px 14px',
+  color: '#fff',
+  cursor: 'pointer',
+  fontSize: 13,
+} as const;
+
+type ViewMode = 'camera' | 'manual-user' | 'manual-error';
+
 interface Props {
   onDetected: (isbn: string) => void;
   onClose: () => void;
@@ -12,13 +24,12 @@ interface Props {
 export const ScannerView = ({ onDetected, onClose }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
-  const [cameraError, setCameraError] = useState(false);
-  const [manualMode, setManualMode] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('camera');
   const [manualIsbn, setManualIsbn] = useState('');
 
   const switchToManual = () => {
     controlsRef.current?.stop();
-    setManualMode(true);
+    setViewMode('manual-user');
   };
 
   useEffect(() => {
@@ -37,7 +48,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
       .then((controls) => {
         controlsRef.current = controls;
       })
-      .catch(() => setCameraError(true));
+      .catch(() => setViewMode('manual-error'));
 
     return () => {
       controlsRef.current?.stop();
@@ -50,6 +61,8 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
       onDetected(isbn);
     }
   };
+
+  const isValidIsbn = ISBN_REGEX.test(manualIsbn.trim().replace(/-/g, ''));
 
   return (
     <div
@@ -73,41 +86,19 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
       >
         <span style={{ fontFamily: FONTS.body, fontSize: 16 }}>📷 バーコードをスキャン</span>
         <div style={{ display: 'flex', gap: 8 }}>
-          {!cameraError && !manualMode && (
-            <button
-              onClick={switchToManual}
-              style={{
-                background: 'rgba(255,255,255,.15)',
-                border: 'none',
-                borderRadius: 20,
-                padding: '4px 14px',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: 13,
-              }}
-            >
+          {viewMode === 'camera' && (
+            <button onClick={switchToManual} style={ghostButtonStyle}>
               手動で入力
             </button>
           )}
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(255,255,255,.15)',
-              border: 'none',
-              borderRadius: 20,
-              padding: '4px 14px',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: 13,
-            }}
-          >
+          <button onClick={onClose} style={ghostButtonStyle}>
             キャンセル
           </button>
         </div>
       </div>
 
       <div style={{ flex: 1, position: 'relative' }}>
-        {!cameraError && !manualMode && (
+        {viewMode === 'camera' && (
           <>
             <video
               ref={videoRef}
@@ -154,7 +145,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
         )}
 
         {/* Manual ISBN input: shown when camera is unavailable or user chose manual mode */}
-        {(cameraError || manualMode) && (
+        {viewMode !== 'camera' && (
           <div
             style={{
               display: 'flex',
@@ -167,7 +158,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
             }}
           >
             <div style={{ color: '#fff', fontSize: 14, textAlign: 'center', opacity: 0.8 }}>
-              {cameraError
+              {viewMode === 'manual-error'
                 ? 'カメラを使用できません。ISBNを手動で入力してください。'
                 : 'ISBNを入力してください。'}
             </div>
@@ -190,7 +181,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
             />
             <button
               onClick={handleManualSubmit}
-              disabled={!/^97[89]\d{10}$/.test(manualIsbn.trim().replace(/-/g, ''))}
+              disabled={!isValidIsbn}
               style={{
                 background: COLORS.accent,
                 color: '#fff',
@@ -201,7 +192,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
                 fontWeight: 700,
                 cursor: 'pointer',
                 fontFamily: FONTS.body,
-                opacity: ISBN_REGEX.test(manualIsbn.trim().replace(/-/g, '')) ? 1 : 0.5,
+                opacity: isValidIsbn ? 1 : 0.5,
               }}
             >
               検索する
