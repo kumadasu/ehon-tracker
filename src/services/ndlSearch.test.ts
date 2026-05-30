@@ -161,6 +161,147 @@ describe('searchMagazineIssues', () => {
     expect(results).toEqual([]);
   });
 
+  it('when dc:title is absent, it should fall back to the RSS title element', async () => {
+    // Arrange
+    mockFetch(
+      rss([
+        `
+<item>
+  <title>鉄おも!</title>
+  <guid isPermaLink="true">https://ndlsearch.ndl.go.jp/books/R100000002-I000010823077-i33267934</guid>
+  <dcndl:volume>18巻1号(通号204) 2025年1月</dcndl:volume>
+  <dc:publisher>ネコ・パブリッシング</dc:publisher>
+  <dc:date xsi:type="dcterms:W3CDTF">2025</dc:date>
+  <dc:identifier xsi:type="dcndl:NDLBibID">000010823077</dc:identifier>
+</item>`,
+      ])
+    );
+
+    // Act
+    const results = await searchMagazineIssues('鉄おも', 2025);
+
+    // Assert
+    expect(results[0].title).toBe('鉄おも!');
+  });
+
+  it('when guid is absent but link is present, it should use link for ndlLink', async () => {
+    // Arrange
+    const link = 'https://ndlsearch.ndl.go.jp/books/R100000002-I000010823077-i33267934';
+    mockFetch(
+      rss([
+        `
+<item>
+  <title>鉄おも!</title>
+  <link>${link}</link>
+  <dc:title>鉄おも!</dc:title>
+  <dcndl:volume>18巻1号(通号204) 2025年1月</dcndl:volume>
+  <dc:publisher>ネコ・パブリッシング</dc:publisher>
+  <dc:date xsi:type="dcterms:W3CDTF">2025</dc:date>
+  <dc:identifier xsi:type="dcndl:NDLBibID">000010823077</dc:identifier>
+</item>`,
+      ])
+    );
+
+    // Act
+    const results = await searchMagazineIssues('鉄おも', 2025);
+
+    // Assert
+    expect(results[0].ndlLink).toBe(link);
+  });
+
+  it('when both guid and link are absent, ndlLink should be empty string', async () => {
+    // Arrange
+    mockFetch(
+      rss([
+        `
+<item>
+  <title>鉄おも!</title>
+  <dc:title>鉄おも!</dc:title>
+  <dcndl:volume>18巻1号(通号204) 2025年1月</dcndl:volume>
+  <dc:publisher>ネコ・パブリッシング</dc:publisher>
+  <dc:date xsi:type="dcterms:W3CDTF">2025</dc:date>
+  <dc:identifier xsi:type="dcndl:NDLBibID">000010823077</dc:identifier>
+</item>`,
+      ])
+    );
+
+    // Act
+    const results = await searchMagazineIssues('鉄おも', 2025);
+
+    // Assert
+    expect(results[0].ndlLink).toBe('');
+  });
+
+  it('when dc:date is absent, it should use the search year as fallback', async () => {
+    // Arrange
+    mockFetch(
+      rss([
+        `
+<item>
+  <title>鉄おも!</title>
+  <guid isPermaLink="true">https://ndlsearch.ndl.go.jp/books/R100000002-I000010823077-i33267934</guid>
+  <dc:title>鉄おも!</dc:title>
+  <dcndl:volume>18巻1号(通号204) 2025年1月</dcndl:volume>
+  <dc:publisher>ネコ・パブリッシング</dc:publisher>
+  <dc:identifier xsi:type="dcndl:NDLBibID">000010823077</dc:identifier>
+</item>`,
+      ])
+    );
+
+    // Act
+    const results = await searchMagazineIssues('鉄おも', 2025);
+
+    // Assert
+    expect(results[0].year).toBe('2025');
+  });
+
+  it('when both dc:title and rss title are absent, title should be empty string', async () => {
+    // Arrange
+    mockFetch(
+      rss([
+        `
+<item>
+  <guid isPermaLink="true">https://ndlsearch.ndl.go.jp/books/R100000002-I000010823077-i33267934</guid>
+  <dcndl:volume>18巻1号(通号204) 2025年1月</dcndl:volume>
+  <dc:publisher>ネコ・パブリッシング</dc:publisher>
+  <dc:date xsi:type="dcterms:W3CDTF">2025</dc:date>
+  <dc:identifier xsi:type="dcndl:NDLBibID">000010823077</dc:identifier>
+</item>`,
+      ])
+    );
+
+    // Act
+    const results = await searchMagazineIssues('鉄おも', 2025);
+
+    // Assert
+    expect(results[0].title).toBe('');
+  });
+
+  it('when dc:identifier has no xsi:type attribute, it should be ignored without error', async () => {
+    // Arrange: identifier without xsi:type exercises the getAttributeNS ?? getAttribute ?? '' chain
+    mockFetch(
+      rss([
+        `
+<item>
+  <title>鉄おも!</title>
+  <guid isPermaLink="true">https://ndlsearch.ndl.go.jp/books/R100000002-I000010823077-i33267934</guid>
+  <dc:title>鉄おも!</dc:title>
+  <dcndl:volume>18巻1号(通号204) 2025年1月</dcndl:volume>
+  <dc:publisher>ネコ・パブリッシング</dc:publisher>
+  <dc:date xsi:type="dcterms:W3CDTF">2025</dc:date>
+  <dc:identifier>plain-id-without-type</dc:identifier>
+  <dc:identifier xsi:type="dcndl:NDLBibID">000010823077</dc:identifier>
+</item>`,
+      ])
+    );
+
+    // Act
+    const results = await searchMagazineIssues('鉄おも', 2025);
+
+    // Assert: plain identifier should not affect issn (only NDLBibID is picked up)
+    expect(results[0].issn).toBe('000010823077');
+  });
+
   it('when called, it should include title, year, and dpid in the request URL', async () => {
     // Arrange
     mockFetch(rss([]));
