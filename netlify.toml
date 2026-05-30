@@ -1,5 +1,0 @@
-[[redirects]]
-  from = "/api/ndl/*"
-  to = "https://ndlsearch.ndl.go.jp/api/:splat"
-  status = 200
-  force = true
