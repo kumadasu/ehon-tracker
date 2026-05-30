@@ -3,7 +3,11 @@ import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser'
 import { COLORS, FONTS } from '../constants/theme';
 
 const ISBN_REGEX = /^97[89]\d{10}$/;
-const normalizeIsbn = (input: string) => input.trim().replace(/^isbn[:\s]*/i, '').replace(/-/g, '');
+const normalizeIsbn = (input: string) =>
+  input
+    .trim()
+    .replace(/^isbn[:\s]*/i, '')
+    .replace(/-/g, '');
 
 const ghostButtonStyle = {
   background: 'rgba(255,255,255,.15)',
