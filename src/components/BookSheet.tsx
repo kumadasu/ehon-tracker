@@ -29,6 +29,7 @@ export const BookSheet = ({ book, onSave, onCancel }: Props) => {
       dueDate,
       rating,
       memo,
+      volume: book.volume,
     });
   };
 
@@ -100,6 +101,11 @@ export const BookSheet = ({ book, onSave, onCancel }: Props) => {
               {book.title}
             </div>
             <div style={{ fontSize: 13, color: COLORS.inkLight, marginTop: 2 }}>{book.authors}</div>
+            {book.volume && (
+              <div style={{ fontSize: 12, color: COLORS.inkLight, marginTop: 2 }}>
+                {book.volume}
+              </div>
+            )}
           </div>
         </div>
 

@@ -69,7 +69,12 @@ export const BookCard = ({ book, onReturn, onEdit }: Props) => {
         >
           {book.title}
         </div>
-        <div style={{ fontSize: 12, color: COLORS.inkLight, marginBottom: 6 }}>{book.authors}</div>
+        <div style={{ fontSize: 12, color: COLORS.inkLight, marginBottom: book.volume ? 2 : 6 }}>
+          {book.authors}
+        </div>
+        {book.volume && (
+          <div style={{ fontSize: 11, color: COLORS.inkLight, marginBottom: 6 }}>{book.volume}</div>
+        )}
         <StarRating value={book.rating} />
         {book.memo ? (
           <div

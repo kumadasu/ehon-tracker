@@ -4,11 +4,13 @@ import type { Book } from '../types';
 import { COLORS, FONTS } from '../constants/theme';
 import { today, addDays, formatDate, daysLeft } from '../utils/dateUtils';
 import { fetchBookInfo } from '../services/googleBooks';
+import type { NdlMagazineIssue } from '../services/ndlSearch';
 import { buildGoogleCalendarUrl, downloadIcs } from '../services/calendarLink';
 import { useBooks } from '../hooks/useBooks';
 import { BookCard } from '../components/BookCard';
 import { BookSheet } from '../components/BookSheet';
 import { ScannerView } from '../components/ScannerView';
+import { MagazineSearchView } from '../components/MagazineSearchView';
 import { Toast } from '../components/Toast';
 
 type Tab = 'borrowing' | 'history' | 'search';
@@ -42,6 +44,7 @@ export const MainApp = ({ auth }: Props) => {
   const { books, add, update, markReturned } = useBooks(drive);
   const [tab, setTab] = useState<Tab>('borrowing');
   const [scanning, setScanning] = useState(false);
+  const [showMagazineSearch, setShowMagazineSearch] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editBook, setEditBook] = useState<EditableBook | null>(null);
   const [query, setQuery] = useState('');
@@ -79,6 +82,25 @@ export const MainApp = ({ auth }: Props) => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const handleMagazineSelect = useCallback((issue: NdlMagazineIssue) => {
+    setShowMagazineSearch(false);
+    const borrowedAt = today();
+    setEditBook({
+      title: issue.title,
+      authors: issue.publisher,
+      isbn: issue.issn,
+      volume: issue.volume,
+      publisher: issue.publisher,
+      thumbnail: null,
+      description: '',
+      borrowedAt,
+      dueDate: addDays(borrowedAt, 14),
+      returned: false,
+      rating: 0,
+      memo: '',
+    });
   }, []);
 
   const handleSave = (book: Book) => {
@@ -195,6 +217,22 @@ export const MainApp = ({ auth }: Props) => {
                     ☁️ バックアップ
                   </button>
                 ))}
+              <button
+                onClick={() => setShowMagazineSearch(true)}
+                style={{
+                  background: 'none',
+                  border: `1.5px solid ${COLORS.accent}`,
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  color: COLORS.accent,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: FONTS.body,
+                }}
+              >
+                📖 雑誌
+              </button>
               <button
                 onClick={() => setScanning(true)}
                 disabled={loading}
@@ -406,6 +444,13 @@ export const MainApp = ({ auth }: Props) => {
       </div>
 
       {scanning && <ScannerView onDetected={handleDetected} onClose={() => setScanning(false)} />}
+
+      {showMagazineSearch && (
+        <MagazineSearchView
+          onSelect={handleMagazineSelect}
+          onClose={() => setShowMagazineSearch(false)}
+        />
+      )}
 
       {editBook && (
         <BookSheet book={editBook} onSave={handleSave} onCancel={() => setEditBook(null)} />
