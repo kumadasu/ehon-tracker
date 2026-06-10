@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import type { AuthState } from '../hooks/useAuth';
 import type { Book } from '../types';
 import { COLORS, FONTS } from '../constants/theme';
 import { today, addDays, formatDate, daysLeft } from '../utils/dateUtils';
@@ -17,10 +16,6 @@ type Tab = 'borrowing' | 'history' | 'search';
 
 type EditableBook = Partial<Book> & { title: string; authors: string; isbn: string };
 
-interface Props {
-  auth: AuthState & { signIn: () => Promise<void>; signOut: () => void };
-}
-
 const TAB_STYLE = (active: boolean): React.CSSProperties => ({
   flex: 1,
   padding: '10px 0',
@@ -35,13 +30,8 @@ const TAB_STYLE = (active: boolean): React.CSSProperties => ({
   fontFamily: FONTS.body,
 });
 
-export const MainApp = ({ auth }: Props) => {
-  const drive =
-    auth.accessToken && auth.driveFileId
-      ? { accessToken: auth.accessToken, driveFileId: auth.driveFileId }
-      : null;
-
-  const { books, add, update, markReturned } = useBooks(drive);
+export const MainApp = () => {
+  const { books, add, update, markReturned } = useBooks();
   const [tab, setTab] = useState<Tab>('borrowing');
   const [scanning, setScanning] = useState(false);
   const [showMagazineSearch, setShowMagazineSearch] = useState(false);
@@ -185,38 +175,6 @@ export const MainApp = ({ auth }: Props) => {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {auth.enabled &&
-                (auth.accessToken ? (
-                  <button
-                    onClick={auth.signOut}
-                    style={{
-                      background: 'none',
-                      border: `1px solid ${COLORS.border}`,
-                      borderRadius: 20,
-                      padding: '4px 10px',
-                      fontSize: 11,
-                      color: COLORS.inkLight,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    ☁️ 同期中 · サインアウト
-                  </button>
-                ) : (
-                  <button
-                    onClick={auth.signIn}
-                    style={{
-                      background: 'none',
-                      border: `1px solid ${COLORS.border}`,
-                      borderRadius: 20,
-                      padding: '4px 10px',
-                      fontSize: 11,
-                      color: COLORS.inkLight,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    ☁️ バックアップ
-                  </button>
-                ))}
               <button
                 onClick={() => setShowMagazineSearch(true)}
                 style={{
