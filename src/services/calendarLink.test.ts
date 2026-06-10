@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { buildGoogleCalendarUrl, buildIcsContent } from './calendarLink';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { buildGoogleCalendarUrl, buildIcsContent, escapeIcsText } from './calendarLink';
 import type { Book } from '../types';
 
 const makeBook = (overrides: Partial<Book> = {}): Book => ({
@@ -154,5 +154,97 @@ describe('buildIcsContent', () => {
     // Assert
     expect(ics).toContain('テスト絵本1');
     expect(ics).toContain('テスト絵本2');
+  });
+
+  it('when called, it should include a UID property inside VEVENT', () => {
+    // Arrange
+    const books = [makeBook()];
+
+    // Act
+    const ics = buildIcsContent(books);
+
+    // Assert
+    expect(ics).toMatch(/\r\nUID:[^\r\n]+@ehon-tracker\r\n/);
+  });
+
+  it('when called, it should include a DTSTAMP property in UTC format', () => {
+    // Arrange
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-10T03:00:00Z'));
+    const books = [makeBook()];
+
+    // Act
+    const ics = buildIcsContent(books);
+
+    // Assert
+    expect(ics).toContain('DTSTAMP:20260610T030000Z');
+
+    vi.useRealTimers();
+  });
+
+  it('when a title contains a comma, it should escape it in SUMMARY', () => {
+    // Arrange
+    const books = [makeBook({ title: 'は,な' })];
+
+    // Act
+    const ics = buildIcsContent(books);
+
+    // Assert
+    expect(ics).toContain('SUMMARY:返却期限：は\\,な');
+  });
+
+  it('when a title contains a semicolon, it should escape it in SUMMARY', () => {
+    // Arrange
+    const books = [makeBook({ title: 'は;な' })];
+
+    // Act
+    const ics = buildIcsContent(books);
+
+    // Assert
+    expect(ics).toContain('SUMMARY:返却期限：は\\;な');
+  });
+
+  it('when a title contains a backslash, it should escape it in SUMMARY', () => {
+    // Arrange
+    const books = [makeBook({ title: 'は\\な' })];
+
+    // Act
+    const ics = buildIcsContent(books);
+
+    // Assert
+    expect(ics).toContain('SUMMARY:返却期限：は\\\\な');
+  });
+
+  it('when a title contains special characters, it should escape them in DESCRIPTION', () => {
+    // Arrange
+    const books = [makeBook({ title: 'a,b;c\\d' })];
+
+    // Act
+    const ics = buildIcsContent(books);
+
+    // Assert
+    expect(ics).toContain('・a\\,b\\;c\\\\d');
+  });
+});
+
+describe('escapeIcsText', () => {
+  it('when the string contains a backslash, it should double it', () => {
+    expect(escapeIcsText('a\\b')).toBe('a\\\\b');
+  });
+
+  it('when the string contains a semicolon, it should escape it', () => {
+    expect(escapeIcsText('a;b')).toBe('a\\;b');
+  });
+
+  it('when the string contains a comma, it should escape it', () => {
+    expect(escapeIcsText('a,b')).toBe('a\\,b');
+  });
+
+  it('when the string contains a newline, it should replace it with \\n literal', () => {
+    expect(escapeIcsText('a\nb')).toBe('a\\nb');
+  });
+
+  it('when the string contains multiple special characters, it should escape all', () => {
+    expect(escapeIcsText('\\,;')).toBe('\\\\\\,\\;');
   });
 });
