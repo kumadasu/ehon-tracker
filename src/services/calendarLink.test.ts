@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { buildGoogleCalendarUrl, buildIcsContent, escapeIcsText } from './calendarLink';
 import type { Book } from '../types';
 
