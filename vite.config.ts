@@ -63,6 +63,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.ts',
+    env: { TZ: 'Asia/Tokyo' },
     coverage: {
       thresholds: {
         branches: 90,

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { today, addDays, formatDate, daysLeft } from './dateUtils';
 
-// Base anchor: 2024-01-15T12:00:00.000Z (UTC noon, safely within Jan 15 in any timezone)
+// All tests run with TZ=Asia/Tokyo (set in vite.config.ts).
+// Base anchor: 2024-01-15T12:00:00.000Z = 2024-01-15T21:00:00+09:00 (JST)
 const BASE_TIME = new Date('2024-01-15T12:00:00.000Z');
 
 beforeEach(() => {
@@ -14,8 +15,8 @@ afterEach(() => {
 });
 
 describe('today', () => {
-  it('when called at UTC noon on 2024-01-15, it should return "2024-01-15"', () => {
-    // Verifies that today() returns the UTC date portion from toISOString()
+  it('when called at JST 21:00 on 2024-01-15, it should return "2024-01-15"', () => {
+    // Arrange — BASE_TIME is 2024-01-15T21:00 JST
 
     // Act
     const result = today();
@@ -24,25 +25,20 @@ describe('today', () => {
     expect(result).toBe('2024-01-15');
   });
 
-  it('when called at 23:00 UTC (next day in JST), it should return the UTC date not the JST date', () => {
-    // Known limitation: today() uses toISOString() (UTC), so JST users after 15:00 UTC
-    // (midnight JST) will see yesterday's date. This test documents the current behavior.
-
-    // Arrange
-    vi.setSystemTime(new Date('2024-01-15T23:00:00.000Z')); // JST = 2024-01-16T08:00
+  it('when called at 23:00 UTC (08:00 next day in JST), it should return the JST date', () => {
+    // Arrange — UTC 23:00 on Jan 15 = JST 08:00 on Jan 16
+    vi.setSystemTime(new Date('2024-01-15T23:00:00.000Z'));
 
     // Act
     const result = today();
 
-    // Assert — returns UTC date, not JST date
-    expect(result).toBe('2024-01-15');
+    // Assert — should return JST local date (Jan 16), not UTC date (Jan 15)
+    expect(result).toBe('2024-01-16');
   });
 });
 
 describe('addDays', () => {
   it('when n is positive, it should return a date n days later', () => {
-    // Verifies basic day addition
-
     // Act
     const result = addDays('2024-01-15', 14);
 
@@ -51,8 +47,6 @@ describe('addDays', () => {
   });
 
   it('when n is zero, it should return the same date', () => {
-    // Verifies identity case
-
     // Act
     const result = addDays('2024-01-15', 0);
 
@@ -61,8 +55,6 @@ describe('addDays', () => {
   });
 
   it('when n crosses a month boundary, it should carry over correctly', () => {
-    // Verifies JavaScript setDate() handles month overflow automatically
-
     // Act
     const result = addDays('2024-01-28', 7);
 
@@ -71,8 +63,6 @@ describe('addDays', () => {
   });
 
   it('when n is negative, it should return a date n days earlier', () => {
-    // Verifies that negative values subtract days (implicit but relied on by callers)
-
     // Act
     const result = addDays('2024-01-15', -3);
 
@@ -83,9 +73,6 @@ describe('addDays', () => {
 
 describe('formatDate', () => {
   it('when given a valid date string, it should return a Japanese locale formatted string', () => {
-    // Verifies ja-JP locale formatting with month (long) and day (numeric)
-    // Expected output depends on Node ICU data; "1月15日" on full-ICU builds
-
     // Act
     const result = formatDate('2024-01-15');
 
@@ -94,8 +81,6 @@ describe('formatDate', () => {
   });
 
   it('when given a year-end date, it should format December correctly', () => {
-    // Guards against month-boundary issues in locale formatting
-
     // Act
     const result = formatDate('2024-12-31');
 
@@ -105,20 +90,18 @@ describe('formatDate', () => {
 });
 
 describe('daysLeft', () => {
-  it('when dueDate is today (UTC midnight), it should return 0', () => {
-    // Math.ceil((Jan-15 00:00 UTC - Jan-15 12:00 UTC) / 86400000) = Math.ceil(-0.5) = -0
-    // JavaScript's Math.ceil(-0.5) returns -0 (negative zero); === treats it as 0
+  it('when dueDate is today (local midnight), it should return 0', () => {
+    // BASE_TIME is JST 2024-01-15 21:00; local today midnight = Jan 15 JST midnight
+    // due (Jan 15 JST midnight) - todayMidnight (Jan 15 JST midnight) = 0
 
     // Act
     const result = daysLeft('2024-01-15');
 
-    // Assert — use === to treat -0 and +0 as equal
-    expect(result === 0).toBe(true);
+    // Assert
+    expect(result).toBe(0);
   });
 
   it('when dueDate is tomorrow, it should return 1', () => {
-    // Edge case relevant to the "urgent" threshold in BookCard
-
     // Act
     const result = daysLeft('2024-01-16');
 
@@ -127,8 +110,6 @@ describe('daysLeft', () => {
   });
 
   it('when dueDate is 3 days from now, it should return 3', () => {
-    // Verifies the boundary for the urgent-flag threshold (left <= 3)
-
     // Act
     const result = daysLeft('2024-01-18');
 
@@ -137,12 +118,23 @@ describe('daysLeft', () => {
   });
 
   it('when dueDate is in the past, it should return a negative number', () => {
-    // Math.ceil((Jan-10 00:00 UTC - Jan-15 12:00 UTC) / 86400000) = Math.ceil(-5.5) = -5
+    // due (Jan 10 JST midnight) - todayMidnight (Jan 15 JST midnight) = -5 days
 
     // Act
     const result = daysLeft('2024-01-10');
 
     // Assert
     expect(result).toBe(-5);
+  });
+
+  it('when called at UTC 23:00 (JST 08:00 next day) and dueDate is the JST next day, it should return 0', () => {
+    // Arrange — UTC 23:00 on Jan 15 = JST 08:00 on Jan 16; local today = Jan 16
+    vi.setSystemTime(new Date('2024-01-15T23:00:00.000Z'));
+
+    // Act
+    const result = daysLeft('2024-01-16');
+
+    // Assert — dueDate matches JST today, so 0 days left (not 1 as UTC-based code would return)
+    expect(result).toBe(0);
   });
 });
