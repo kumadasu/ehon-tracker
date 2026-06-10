@@ -324,7 +324,11 @@ export const MainApp = () => {
                             padding: '1px 7px',
                           }}
                         >
-                          {urgent && left <= 0 ? `${Math.abs(left)}日超過` : `あと${left}日`}
+                          {left < 0
+                            ? `${Math.abs(left)}日超過`
+                            : left === 0
+                              ? '今日まで'
+                              : `あと${left}日`}
                         </span>
                       );
                     })()}
