@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser';
 import { COLORS, FONTS } from '../constants/theme';
-
-const ISBN_REGEX = /^97[89]\d{10}$/;
-const normalizeIsbn = (input: string) =>
-  input
-    .trim()
-    .replace(/^isbn[:\s]*/i, '')
-    .replace(/-/g, '');
+import { toIsbn13 } from '../utils/isbn';
 
 const ghostButtonStyle = {
   background: 'rgba(255,255,255,.15)',
@@ -43,10 +37,10 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
     reader
       .decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
         if (result) {
-          const text = result.getText();
-          if (ISBN_REGEX.test(text)) {
+          const isbn13 = toIsbn13(result.getText());
+          if (isbn13) {
             controlsRef.current?.stop();
-            onDetected(text);
+            onDetected(isbn13);
           }
         }
       })
@@ -60,12 +54,11 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
     };
   }, [onDetected]);
 
-  const normalizedIsbn = normalizeIsbn(manualIsbn);
-  const isValidIsbn = ISBN_REGEX.test(normalizedIsbn);
+  const isbn13 = toIsbn13(manualIsbn);
 
   const handleManualSubmit = () => {
-    if (isValidIsbn) {
-      onDetected(normalizedIsbn);
+    if (isbn13) {
+      onDetected(isbn13);
     }
   };
 
@@ -172,7 +165,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
               inputMode="numeric"
               value={manualIsbn}
               onChange={(e) => setManualIsbn(e.target.value)}
-              placeholder="978xxxxxxxxxx"
+              placeholder="978xxxxxxxxxx / 4xxxxxxxxx"
               style={{
                 width: '100%',
                 maxWidth: 320,
@@ -186,7 +179,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
             />
             <button
               onClick={handleManualSubmit}
-              disabled={!isValidIsbn}
+              disabled={!isbn13}
               style={{
                 background: COLORS.accent,
                 color: '#fff',
@@ -197,7 +190,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
                 fontWeight: 700,
                 cursor: 'pointer',
                 fontFamily: FONTS.body,
-                opacity: isValidIsbn ? 1 : 0.5,
+                opacity: isbn13 ? 1 : 0.5,
               }}
             >
               検索する
