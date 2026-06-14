@@ -9,7 +9,10 @@ export const normalizeIsbn = (input: string): string =>
 
 const isbn10To13 = (isbn10: string): string => {
   const base = '978' + isbn10.slice(0, 9);
-  const sum = [...base].reduce((acc, digit, i) => acc + parseInt(digit) * (i % 2 === 0 ? 1 : 3), 0);
+  let sum = 0;
+  for (let i = 0; i < base.length; i++) {
+    sum += (base.charCodeAt(i) - 48) * (i % 2 === 0 ? 1 : 3);
+  }
   const checkDigit = (10 - (sum % 10)) % 10;
   return base + checkDigit;
 };

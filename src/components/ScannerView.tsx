@@ -55,7 +55,6 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
   }, [onDetected]);
 
   const isbn13 = toIsbn13(manualIsbn);
-  const isValidIsbn = isbn13 !== null;
 
   const handleManualSubmit = () => {
     if (isbn13) {
@@ -180,7 +179,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
             />
             <button
               onClick={handleManualSubmit}
-              disabled={!isValidIsbn}
+              disabled={!isbn13}
               style={{
                 background: COLORS.accent,
                 color: '#fff',
@@ -191,7 +190,7 @@ export const ScannerView = ({ onDetected, onClose }: Props) => {
                 fontWeight: 700,
                 cursor: 'pointer',
                 fontFamily: FONTS.body,
-                opacity: isValidIsbn ? 1 : 0.5,
+                opacity: isbn13 ? 1 : 0.5,
               }}
             >
               検索する

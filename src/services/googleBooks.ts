@@ -1,4 +1,5 @@
 import type { GoogleBooksVolume } from '../types';
+import { toIsbn13 } from '../utils/isbn';
 
 interface BookInfo {
   isbn: string;
@@ -14,9 +15,10 @@ interface GoogleBooksResponse {
 }
 
 export const fetchBookInfo = async (isbn: string): Promise<BookInfo | null> => {
+  const normalizedIsbn = toIsbn13(isbn) ?? isbn;
   const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
   const keyParam = apiKey ? `&key=${apiKey}` : '';
-  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}${keyParam}`;
+  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${normalizedIsbn}${keyParam}`;
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Books API ${res.status}`);
@@ -27,7 +29,7 @@ export const fetchBookInfo = async (isbn: string): Promise<BookInfo | null> => {
 
   const info = data.items[0].volumeInfo;
   return {
-    isbn,
+    isbn: normalizedIsbn,
     title: info.title || '不明',
     authors: (info.authors ?? ['著者不明']).join(', '),
     thumbnail: info.imageLinks?.thumbnail?.replace('http://', 'https://') ?? null,
