@@ -4,6 +4,20 @@ import { searchMagazineIssues, type NdlMagazineIssue } from '../services/ndlSear
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+const fieldLabelStyle = { fontSize: 12, color: COLORS.inkLight, display: 'block', marginBottom: 4 };
+
+const fieldInputStyle = {
+  width: '100%',
+  padding: '8px 10px',
+  border: `1.5px solid ${COLORS.border}`,
+  borderRadius: 8,
+  fontSize: 15,
+  color: COLORS.ink,
+  background: COLORS.bg,
+  fontFamily: FONTS.body,
+  boxSizing: 'border-box' as const,
+};
+
 interface Props {
   onSelect: (issue: NdlMagazineIssue) => void;
   onClose: () => void;
@@ -11,20 +25,26 @@ interface Props {
 
 export const MagazineSearchView = ({ onSelect, onClose }: Props) => {
   const [titleInput, setTitleInput] = useState('');
-  const [year, setYear] = useState(CURRENT_YEAR);
+  const [year, setYear] = useState<number | ''>('');
+  const [issueNumber, setIssueNumber] = useState<number | ''>('');
   const [results, setResults] = useState<NdlMagazineIssue[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
   const handleSearch = async () => {
+    if (year === '') return;
     setLoading(true);
     setSearched(true);
-    const issues = await searchMagazineIssues(titleInput.trim(), year);
+    const issues = await searchMagazineIssues(
+      titleInput.trim(),
+      year,
+      issueNumber === '' ? undefined : issueNumber
+    );
     setResults(issues);
     setLoading(false);
   };
 
-  const canSearch = titleInput.trim().length > 0 && !loading;
+  const canSearch = titleInput.trim().length > 0 && year !== '' && !loading;
 
   return (
     <div
@@ -96,45 +116,53 @@ export const MagazineSearchView = ({ onSelect, onClose }: Props) => {
             boxSizing: 'border-box',
           }}
         />
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <label style={{ fontSize: 13, color: COLORS.inkLight, flexShrink: 0 }}>発行年</label>
-          <input
-            type="number"
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            min={1900}
-            max={CURRENT_YEAR + 1}
-            style={{
-              width: 90,
-              padding: '8px 10px',
-              border: `1.5px solid ${COLORS.border}`,
-              borderRadius: 8,
-              fontSize: 15,
-              color: COLORS.ink,
-              background: COLORS.bg,
-              fontFamily: FONTS.body,
-            }}
-          />
-          <button
-            onClick={handleSearch}
-            disabled={!canSearch}
-            style={{
-              flex: 1,
-              padding: '10px',
-              background: COLORS.accent,
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: canSearch ? 'pointer' : 'default',
-              fontFamily: FONTS.body,
-              opacity: canSearch ? 1 : 0.6,
-            }}
-          >
-            {loading ? '検索中…' : '検索'}
-          </button>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <div style={{ flex: 1 }}>
+            <label style={fieldLabelStyle}>発行年</label>
+            <input
+              type="number"
+              value={year}
+              onChange={(e) => setYear(e.target.value === '' ? '' : Number(e.target.value))}
+              onKeyDown={(e) => e.key === 'Enter' && canSearch && handleSearch()}
+              placeholder={`例：${CURRENT_YEAR}`}
+              min={1900}
+              max={CURRENT_YEAR + 1}
+              style={fieldInputStyle}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={fieldLabelStyle}>通号（任意）</label>
+            <input
+              type="number"
+              value={issueNumber}
+              onChange={(e) => setIssueNumber(e.target.value === '' ? '' : Number(e.target.value))}
+              onKeyDown={(e) => e.key === 'Enter' && canSearch && handleSearch()}
+              placeholder="例：822"
+              min={1}
+              style={fieldInputStyle}
+            />
+          </div>
         </div>
+        <button
+          onClick={handleSearch}
+          disabled={!canSearch}
+          style={{
+            width: '100%',
+            padding: '10px',
+            background: COLORS.accent,
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: canSearch ? 'pointer' : 'default',
+            fontFamily: FONTS.body,
+            opacity: canSearch ? 1 : 0.6,
+            boxSizing: 'border-box',
+          }}
+        >
+          {loading ? '検索中…' : '検索'}
+        </button>
       </div>
 
       {/* Results */}

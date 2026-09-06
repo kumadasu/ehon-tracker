@@ -302,7 +302,7 @@ describe('searchMagazineIssues', () => {
     expect(results[0].issn).toBe('000010823077');
   });
 
-  it('when called, it should include title, year, and dpid in the request URL', async () => {
+  it('when called, it should include title, year, cnt, and dpid in the request URL', async () => {
     // Arrange
     mockFetch(rss([]));
 
@@ -314,6 +314,62 @@ describe('searchMagazineIssues', () => {
     expect(calledUrl).toContain('title=%E9%89%84%E3%81%8A%E3%82%82');
     expect(calledUrl).toContain('from=2025-01-01');
     expect(calledUrl).toContain('until=2025-12-31');
+    expect(calledUrl).toContain('cnt=200');
     expect(calledUrl).toContain('dpid=iss-ndl-opac');
+  });
+
+  it('when issueNumber is provided, it should return only the issue matching 通号', async () => {
+    // Arrange
+    mockFetch(
+      rss([
+        issueItem({ volume: '18巻1号(通号204) 2025年1月' }),
+        issueItem({ volume: '18巻2号(通号205) 2025年2月' }),
+      ])
+    );
+
+    // Act
+    const results = await searchMagazineIssues('鉄おも', 2025, 205);
+
+    // Assert
+    expect(results).toHaveLength(1);
+    expect(results[0].volume).toBe('18巻2号(通号205) 2025年2月');
+  });
+
+  it('when issueNumber matches no result, it should return an empty array', async () => {
+    // Arrange
+    mockFetch(rss([issueItem({ volume: '18巻1号(通号204) 2025年1月' })]));
+
+    // Act
+    const results = await searchMagazineIssues('鉄おも', 2025, 999);
+
+    // Assert
+    expect(results).toEqual([]);
+  });
+
+  it('when issueNumber is a bare 通号-less volume string, it should not match', async () => {
+    // Arrange: volume without a 通号 marker should never match a numeric issueNumber filter
+    mockFetch(rss([issueItem({ volume: '13(6)=150:2020.6・7' })]));
+
+    // Act
+    const results = await searchMagazineIssues('鉄おも', 2020, 150);
+
+    // Assert
+    expect(results).toEqual([]);
+  });
+
+  it('when issueNumber is not provided, it should return all issues', async () => {
+    // Arrange
+    mockFetch(
+      rss([
+        issueItem({ volume: '18巻1号(通号204) 2025年1月' }),
+        issueItem({ volume: '18巻2号(通号205) 2025年2月' }),
+      ])
+    );
+
+    // Act
+    const results = await searchMagazineIssues('鉄おも', 2025);
+
+    // Assert
+    expect(results).toHaveLength(2);
   });
 });
