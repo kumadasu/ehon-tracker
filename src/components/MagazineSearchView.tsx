@@ -4,6 +4,20 @@ import { searchMagazineIssues, type NdlMagazineIssue } from '../services/ndlSear
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+const fieldLabelStyle = { fontSize: 13, color: COLORS.inkLight, flexShrink: 0 };
+
+const fieldInputStyle = {
+  width: 72,
+  padding: '8px 10px',
+  border: `1.5px solid ${COLORS.border}`,
+  borderRadius: 8,
+  fontSize: 15,
+  color: COLORS.ink,
+  background: COLORS.bg,
+  fontFamily: FONTS.body,
+  boxSizing: 'border-box' as const,
+};
+
 interface Props {
   onSelect: (issue: NdlMagazineIssue) => void;
   onClose: () => void;
@@ -11,20 +25,26 @@ interface Props {
 
 export const MagazineSearchView = ({ onSelect, onClose }: Props) => {
   const [titleInput, setTitleInput] = useState('');
-  const [year, setYear] = useState(CURRENT_YEAR);
+  const [year, setYear] = useState<number | ''>('');
+  const [issueNumber, setIssueNumber] = useState<number | ''>('');
   const [results, setResults] = useState<NdlMagazineIssue[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
   const handleSearch = async () => {
+    if (year === '') return;
     setLoading(true);
     setSearched(true);
-    const issues = await searchMagazineIssues(titleInput.trim(), year);
+    const issues = await searchMagazineIssues(
+      titleInput.trim(),
+      year,
+      issueNumber === '' ? undefined : issueNumber
+    );
     setResults(issues);
     setLoading(false);
   };
 
-  const canSearch = titleInput.trim().length > 0 && !loading;
+  const canSearch = titleInput.trim().length > 0 && year !== '' && !loading;
 
   return (
     <div
@@ -97,23 +117,26 @@ export const MagazineSearchView = ({ onSelect, onClose }: Props) => {
           }}
         />
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <label style={{ fontSize: 13, color: COLORS.inkLight, flexShrink: 0 }}>発行年</label>
+          <label style={fieldLabelStyle}>発行年</label>
           <input
             type="number"
             value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
+            onChange={(e) => setYear(e.target.value === '' ? '' : Number(e.target.value))}
+            onKeyDown={(e) => e.key === 'Enter' && canSearch && handleSearch()}
+            placeholder={String(CURRENT_YEAR)}
             min={1900}
             max={CURRENT_YEAR + 1}
-            style={{
-              width: 90,
-              padding: '8px 10px',
-              border: `1.5px solid ${COLORS.border}`,
-              borderRadius: 8,
-              fontSize: 15,
-              color: COLORS.ink,
-              background: COLORS.bg,
-              fontFamily: FONTS.body,
-            }}
+            style={fieldInputStyle}
+          />
+          <label style={fieldLabelStyle}>通号</label>
+          <input
+            type="number"
+            value={issueNumber}
+            onChange={(e) => setIssueNumber(e.target.value === '' ? '' : Number(e.target.value))}
+            onKeyDown={(e) => e.key === 'Enter' && canSearch && handleSearch()}
+            placeholder="任意"
+            min={1}
+            style={fieldInputStyle}
           />
           <button
             onClick={handleSearch}

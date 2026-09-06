@@ -18,15 +18,21 @@ function first(el: Element, ns: string, local: string): string {
   return el.getElementsByTagNameNS(ns, local)[0]?.textContent?.trim() ?? '';
 }
 
+const issueNumberOf = (volume: string): number | undefined => {
+  const match = volume.match(/通号(\d+)/);
+  return match ? Number(match[1]) : undefined;
+};
+
 export const searchMagazineIssues = async (
   title: string,
-  year: number
+  year: number,
+  issueNumber?: number
 ): Promise<NdlMagazineIssue[]> => {
   const params = new URLSearchParams({
     title,
     from: `${year}-01-01`,
     until: `${year}-12-31`,
-    cnt: '50',
+    cnt: '200',
     dpid: 'iss-ndl-opac',
   });
 
@@ -72,7 +78,9 @@ export const searchMagazineIssues = async (
 
     const monthOf = (v: string) => Number(v.match(/(\d+)月/)?.[1] ?? 0);
     results.sort((a, b) => monthOf(a.volume) - monthOf(b.volume));
-    return results;
+
+    if (issueNumber === undefined) return results;
+    return results.filter((issue) => issueNumberOf(issue.volume) === issueNumber);
   } catch {
     return [];
   }
