@@ -1,6 +1,13 @@
 import { useState, useCallback } from 'react';
 import type { Book } from '../types';
-import { loadBooks, saveBooks, addBook, updateBook, removeBook } from '../services/storage';
+import {
+  loadBooks,
+  saveBooks,
+  addBook,
+  updateBook,
+  updateDueDates,
+  removeBook,
+} from '../services/storage';
 
 export const useBooks = () => {
   const [books, setBooks] = useState<Book[]>(() => loadBooks());
@@ -24,6 +31,17 @@ export const useBooks = () => {
     (book: Book) => {
       setBooks((prev) => {
         const next = updateBook(prev, book);
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
+  const changeDueDates = useCallback(
+    (ids: string[], dueDate: string) => {
+      setBooks((prev) => {
+        const next = updateDueDates(prev, ids, dueDate);
         persist(next);
         return next;
       });
@@ -55,5 +73,5 @@ export const useBooks = () => {
     [persist]
   );
 
-  return { books, add, update, remove, markReturned };
+  return { books, add, update, changeDueDates, remove, markReturned };
 };
