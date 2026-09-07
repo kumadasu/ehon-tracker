@@ -30,7 +30,7 @@ pnpm test src/utils/dateUtils.test.ts
 
 **Barcode scanning** uses `@zxing/browser` `BrowserMultiFormatReader`. `decodeFromVideoDevice` returns `IScannerControls`; call `controls.stop()` to clean up (not `reader.reset()`). Requires HTTPS — on `localhost` the camera prompt will fail and the manual ISBN input fallback is shown automatically.
 
-**Theme and fonts** are defined in `src/constants/theme.ts` (COLORS, FONTS). All inline styles reference these constants. Google Fonts (DM Serif Display + Noto Serif JP) are loaded in `index.html`.
+**Styling** uses CSS Modules — every component has a `*.module.css` beside it, and there are no inline `style` props. Colors and fonts live as CSS variables in `src/styles/theme.css`; `src/styles/global.css` holds the reset and page chrome. Both are imported once from `main.tsx`. Combine class names with `cx()` from `src/utils/cx.ts` (`cx(styles.card, urgent && styles.urgent)`). Styles shared by sibling components go in a lowercase module such as `src/components/sheetForm.module.css`. Google Fonts (DM Serif Display + Noto Serif JP) are loaded in `index.html`.
 
 ## Language convention
 
@@ -45,6 +45,8 @@ See `docs/TESTING.md` for the full policy. Key rules:
 - Structure: `// Arrange / // Act / // Assert` comments
 - Mock only at external boundaries (HTTP, localStorage, datetime). If >3 mocks are needed, reconsider the design.
 - Use `msw` for HTTP mocking, `vi.stubGlobal('fetch', vi.fn())` for one-off fetch stubs.
+
+CI runs `pnpm coverage`, not `pnpm test` — it enforces a **per-file 90% branch threshold**. A file with no tests is absent from the report and therefore ungated, so adding the first test to one puts it under the threshold immediately: cover its branches in the same change, and verify with `pnpm coverage` before pushing.
 
 ## Environment
 
