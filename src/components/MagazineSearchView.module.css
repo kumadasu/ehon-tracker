@@ -1,0 +1,134 @@
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-paper);
+}
+
+.heading {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.cancel {
+  padding: 4px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-ink-light);
+  cursor: pointer;
+}
+
+.form {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-paper);
+}
+
+.titleInput {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-ink);
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterLabel {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--color-ink-light);
+}
+
+.filterInput {
+  box-sizing: border-box;
+  width: 72px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-ink);
+}
+
+.search {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-accent);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
+.search:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.results {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 16px;
+}
+
+.empty {
+  padding: 40px;
+  font-size: 14px;
+  text-align: center;
+  color: var(--color-ink-light);
+}
+
+.result {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 12px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-paper);
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.resultVolume {
+  margin-bottom: 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.resultPublisher {
+  font-size: 12px;
+  color: var(--color-ink-light);
+}
