@@ -1,0 +1,20 @@
+/*
+ * CSS-variable mirror of src/constants/theme.ts.
+ * Keep the two in sync: theme.ts serves the components that still use inline
+ * styles, these variables serve the ones migrated to CSS Modules.
+ */
+:root {
+  --color-bg: #f5f0e8;
+  --color-paper: #fdfaf4;
+  --color-ink: #1c1917;
+  --color-ink-light: #57534e;
+  --color-accent: #c0543c;
+  --color-accent-light: #f2d4ce;
+  --color-border: #d6cfc3;
+  --color-star: #e8a838;
+  --color-green: #3a7d5a;
+  --color-green-light: #d4ede1;
+
+  --font-heading: 'DM Serif Display', serif;
+  --font-body: 'Noto Serif JP', serif;
+}

@@ -164,7 +164,6 @@ export const MainApp = () => {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: ${COLORS.border}; border-radius: 2px; }
         @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         .card-enter { animation: slideUp .25s ease; }
       `}</style>
 
