@@ -26,7 +26,8 @@ pnpm test src/utils/dateUtils.test.ts
 
 **External API calls** (all `fetch`, no SDK):
 
-- `src/services/googleBooks.ts` — Google Books API (no key required)
+- `src/services/googleBooks.ts` — Google Books API, ISBN lookup for scanned books. Key optional (`VITE_GOOGLE_BOOKS_API_KEY`); the request omits the `key` param when it is unset.
+- `src/services/ndlSearch.ts` — NDL Search API, magazine issue lookup. Returns XML, parsed with `DOMParser`. It always requests the relative path `/api/ndl/opensearch`, which `vite.config.ts` proxies to `ndlsearch.ndl.go.jp` **in dev only** — the repo carries no production equivalent of that rewrite.
 
 **Barcode scanning** uses `@zxing/browser` `BrowserMultiFormatReader`. `decodeFromVideoDevice` returns `IScannerControls`; call `controls.stop()` to clean up (not `reader.reset()`). Requires HTTPS — on `localhost` the camera prompt will fail and the manual ISBN input fallback is shown automatically.
 
