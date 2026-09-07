@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import type { Book } from '../types';
-import { COLORS, FONTS } from '../constants/theme';
 import { addDays, today } from '../utils/dateUtils';
+import { cx } from '../utils/cx';
 import { BottomSheet } from './BottomSheet';
 import { StarRating } from './StarRating';
+import styles from './BookSheet.module.css';
+import form from './sheetForm.module.css';
 
 interface Props {
   book: Partial<Book> & { title: string; authors: string; isbn: string };
@@ -36,114 +38,44 @@ export const BookSheet = ({ book, onSave, onCancel }: Props) => {
 
   return (
     <BottomSheet onClose={onCancel}>
-      {/* Book header */}
-      <div style={{ display: 'flex', gap: 14, marginBottom: 20 }}>
-        <div
-          style={{
-            width: 52,
-            height: 70,
-            borderRadius: 6,
-            background: COLORS.bg,
-            border: `1px solid ${COLORS.border}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 22,
-            overflow: 'hidden',
-            flexShrink: 0,
-          }}
-        >
-          {book.thumbnail ? (
-            <img
-              src={book.thumbnail}
-              alt=""
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            '📚'
-          )}
+      <div className={styles.header}>
+        <div className={styles.thumbnail}>
+          {book.thumbnail ? <img src={book.thumbnail} alt="" /> : '📚'}
         </div>
         <div>
-          <div style={{ fontFamily: FONTS.body, fontSize: 16, fontWeight: 700, color: COLORS.ink }}>
-            {book.title}
-          </div>
-          <div style={{ fontSize: 13, color: COLORS.inkLight, marginTop: 2 }}>{book.authors}</div>
-          {book.volume && (
-            <div style={{ fontSize: 12, color: COLORS.inkLight, marginTop: 2 }}>{book.volume}</div>
-          )}
+          <div className={styles.title}>{book.title}</div>
+          <div className={styles.authors}>{book.authors}</div>
+          {book.volume && <div className={styles.volume}>{book.volume}</div>}
         </div>
       </div>
 
-      {/* Due date */}
-      <label style={{ display: 'block', marginBottom: 14 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.inkLight, marginBottom: 6 }}>
-          返却予定日
-        </div>
+      <label className={form.field}>
+        <div className={form.label}>返却予定日</div>
         <input
           type="date"
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            border: `1.5px solid ${COLORS.border}`,
-            borderRadius: 8,
-            background: COLORS.bg,
-            fontSize: 15,
-            color: COLORS.ink,
-            boxSizing: 'border-box',
-          }}
+          className={form.control}
         />
       </label>
 
-      {/* Rating */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.inkLight, marginBottom: 6 }}>
-          評価
-        </div>
+      <div className={styles.rating}>
+        <div className={form.label}>評価</div>
         <StarRating value={rating} onChange={setRating} />
       </div>
 
-      {/* Memo */}
-      <label style={{ display: 'block', marginBottom: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.inkLight, marginBottom: 6 }}>
-          感想メモ
-        </div>
+      <label className={cx(form.field, styles.memoField)}>
+        <div className={form.label}>感想メモ</div>
         <textarea
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
           placeholder="子どもの反応や好きなシーンなど…"
           rows={3}
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            border: `1.5px solid ${COLORS.border}`,
-            borderRadius: 8,
-            background: COLORS.bg,
-            fontSize: 14,
-            color: COLORS.ink,
-            resize: 'none',
-            boxSizing: 'border-box',
-            fontFamily: 'inherit',
-          }}
+          className={cx(form.control, form.textarea)}
         />
       </label>
 
-      <button
-        onClick={handleSave}
-        style={{
-          width: '100%',
-          padding: '14px',
-          background: COLORS.accent,
-          color: '#fff',
-          border: 'none',
-          borderRadius: 12,
-          fontSize: 16,
-          fontWeight: 700,
-          cursor: 'pointer',
-          fontFamily: FONTS.body,
-        }}
-      >
+      <button onClick={handleSave} className={form.submit}>
         保存する
       </button>
     </BottomSheet>

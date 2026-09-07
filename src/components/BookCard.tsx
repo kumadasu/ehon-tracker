@@ -1,5 +1,6 @@
 import type { Book } from '../types';
 import { daysLeft } from '../utils/dateUtils';
+import { cx } from '../utils/cx';
 import { StarRating } from './StarRating';
 import styles from './BookCard.module.css';
 
@@ -8,8 +9,6 @@ interface Props {
   onReturn: (id: string) => void;
   onEdit: (book: Book) => void;
 }
-
-const cx = (...names: (string | false | undefined)[]) => names.filter(Boolean).join(' ');
 
 export const BookCard = ({ book, onReturn, onEdit }: Props) => {
   const left = daysLeft(book.dueDate);

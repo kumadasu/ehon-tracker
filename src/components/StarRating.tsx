@@ -1,4 +1,5 @@
-import { COLORS } from '../constants/theme';
+import { cx } from '../utils/cx';
+import styles from './StarRating.module.css';
 
 interface Props {
   value: number;
@@ -6,17 +7,12 @@ interface Props {
 }
 
 export const StarRating = ({ value, onChange }: Props) => (
-  <div style={{ display: 'flex', gap: 4 }}>
+  <div className={styles.rating}>
     {[1, 2, 3, 4, 5].map((s) => (
       <span
         key={s}
         onClick={() => onChange?.(s)}
-        style={{
-          fontSize: 22,
-          cursor: onChange ? 'pointer' : 'default',
-          color: s <= value ? COLORS.star : COLORS.border,
-          transition: 'color .15s',
-        }}
+        className={cx(styles.star, s <= value && styles.filled, onChange && styles.interactive)}
       >
         ★
       </span>

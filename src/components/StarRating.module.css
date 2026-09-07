@@ -1,0 +1,19 @@
+.rating {
+  display: flex;
+  gap: 4px;
+}
+
+.star {
+  font-size: 22px;
+  color: var(--color-border);
+  cursor: default;
+  transition: color 0.15s;
+}
+
+.star.filled {
+  color: var(--color-star);
+}
+
+.star.interactive {
+  cursor: pointer;
+}
