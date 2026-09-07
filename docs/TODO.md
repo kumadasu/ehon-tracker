@@ -8,14 +8,22 @@ Japanese magazines carry a JAN code (EAN-13 starting with 491/492) instead of an
 ISBN. `toIsbn13` returns `null` for those, and `ScannerView` simply keeps
 scanning — so pointing the camera at a magazine looks like the scanner is broken.
 
-Magazines can already be registered through the 📖 雑誌 button, which searches the
-NDL Search API by title, year and issue number. The gap is only the scan path.
+Magazines are registered instead through the 📖 雑誌 button, which searches the NDL
+Search API by title and year. That is the only path, and nothing on the scan screen
+says so.
 
-Options, cheapest first:
+Options:
 
 - Recognise a 491/492 prefix and tell the user to use the magazine search instead
 - Take them straight to the magazine search when a JAN code is scanned
-- Look the JAN code up directly, if a data source that maps JAN to issue exists
+
+## Decided against
+
+### Looking up a magazine issue from its JAN code
+
+Investigated and dropped: no API whose terms of use permit it. The magazine search
+by title and year is the deliberate substitute, not a stopgap — please don't
+re-open this without a new data source.
 
 ## Notes
 
