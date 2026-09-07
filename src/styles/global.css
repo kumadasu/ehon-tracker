@@ -1,0 +1,23 @@
+/*
+ * App-wide reset and page chrome. Previously an inline <style> block inside
+ * MainApp; moved here so it is not re-injected on every render.
+ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  font-family: var(--font-body);
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: var(--color-border);
+}
