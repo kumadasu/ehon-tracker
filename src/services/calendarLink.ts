@@ -16,37 +16,3 @@ export const buildGoogleCalendarUrl = (books: Book[]): string => {
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 };
-
-export const buildIcsContent = (books: Book[]): string => {
-  const date = books[0].dueDate.replace(/-/g, '');
-  const desc = descriptionLines(books).replace(/\n/g, '\\n');
-
-  return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//ehon-tracker//EN',
-    'BEGIN:VEVENT',
-    `DTSTART:${date}T090000`,
-    `DTEND:${date}T120000`,
-    `SUMMARY:${summary(books)}`,
-    `DESCRIPTION:${desc}`,
-    'BEGIN:VALARM',
-    'TRIGGER:-PT9H',
-    'ACTION:DISPLAY',
-    'DESCRIPTION:返却期限のリマインダー',
-    'END:VALARM',
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ].join('\r\n');
-};
-
-export const downloadIcs = (books: Book[]): void => {
-  const content = buildIcsContent(books);
-  const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `返却期限_${books[0].dueDate}.ics`;
-  a.click();
-  URL.revokeObjectURL(url);
-};

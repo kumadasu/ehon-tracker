@@ -5,7 +5,6 @@ import { MainApp } from './MainApp';
 import { makeBook } from '../test/fixtures';
 import { addDays, today, formatDate } from '../utils/dateUtils';
 import { fetchBookInfo } from '../services/googleBooks';
-import { downloadIcs } from '../services/calendarLink';
 import type { Book } from '../types';
 
 // Mock the two HTTP boundaries and the barcode library; MainApp is the composition
@@ -16,10 +15,6 @@ vi.mock('@zxing/browser', () => ({
   BrowserMultiFormatReader: class {
     decodeFromVideoDevice = vi.fn().mockRejectedValue(new Error('no camera'));
   },
-}));
-vi.mock('../services/calendarLink', async (original) => ({
-  ...(await original<typeof import('../services/calendarLink')>()),
-  downloadIcs: vi.fn(),
 }));
 
 const fetchMock = vi.mocked(fetchBookInfo);
@@ -191,22 +186,6 @@ describe('MainApp — calendar export', () => {
       '_blank',
       'noopener,noreferrer'
     );
-  });
-
-  it('when .ics is chosen, it should download and confirm', async () => {
-    // Verifies the file export gives feedback
-
-    // Arrange
-    const user = userEvent.setup();
-    seed(makeBook({ dueDate: addDays(today(), 5) }));
-    render(<MainApp />);
-
-    // Act
-    await user.click(screen.getByRole('button', { name: '.ics' }));
-
-    // Assert
-    expect(downloadIcs).toHaveBeenCalled();
-    expect(screen.getByText('.icsファイルをダウンロードしました')).toBeInTheDocument();
   });
 });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildGoogleCalendarUrl, buildIcsContent } from './calendarLink';
+import { buildGoogleCalendarUrl } from './calendarLink';
 import type { Book } from '../types';
 
 const makeBook = (overrides: Partial<Book> = {}): Book => ({
@@ -88,71 +88,5 @@ describe('buildGoogleCalendarUrl', () => {
     expect(decoded).toContain('テスト絵本1');
     expect(decoded).toContain('テスト絵本2');
     expect(decoded).toContain('テスト絵本3');
-  });
-});
-
-describe('buildIcsContent', () => {
-  it('when called, it should return a string beginning with BEGIN:VCALENDAR', () => {
-    // Arrange / Act
-    const ics = buildIcsContent([makeBook()]);
-
-    // Assert
-    expect(ics).toMatch(/^BEGIN:VCALENDAR/);
-  });
-
-  it('when called, DTSTART should be 09:00 on the due date', () => {
-    // Arrange
-    const books = [makeBook({ dueDate: '2024-02-01' })];
-
-    // Act
-    const ics = buildIcsContent(books);
-
-    // Assert
-    expect(ics).toContain('DTSTART:20240201T090000');
-  });
-
-  it('when called, DTEND should be 12:00 on the due date', () => {
-    // Arrange
-    const books = [makeBook({ dueDate: '2024-02-01' })];
-
-    // Act
-    const ics = buildIcsContent(books);
-
-    // Assert
-    expect(ics).toContain('DTEND:20240201T120000');
-  });
-
-  it('when called, SUMMARY should include the book title', () => {
-    // Arrange
-    const books = [makeBook({ title: 'ノンタン' })];
-
-    // Act
-    const ics = buildIcsContent(books);
-
-    // Assert
-    expect(ics).toContain('ノンタン');
-  });
-
-  it('when called with multiple books, SUMMARY should contain the book count', () => {
-    // Arrange
-    const books = makeBooks(2, { dueDate: '2024-02-01' });
-
-    // Act
-    const ics = buildIcsContent(books);
-
-    // Assert
-    expect(ics).toContain('2冊');
-  });
-
-  it('when called with multiple books, DESCRIPTION should list all titles', () => {
-    // Arrange
-    const books = makeBooks(2, { dueDate: '2024-02-01' });
-
-    // Act
-    const ics = buildIcsContent(books);
-
-    // Assert
-    expect(ics).toContain('テスト絵本1');
-    expect(ics).toContain('テスト絵本2');
   });
 });

@@ -4,7 +4,7 @@ import { today, addDays, formatDate, daysLeft } from '../utils/dateUtils';
 import { cx } from '../utils/cx';
 import { fetchBookInfo } from '../services/googleBooks';
 import type { NdlMagazineIssue } from '../services/ndlSearch';
-import { buildGoogleCalendarUrl, downloadIcs } from '../services/calendarLink';
+import { buildGoogleCalendarUrl } from '../services/calendarLink';
 import { useBooks } from '../hooks/useBooks';
 import { BookCard } from '../components/BookCard';
 import { BookSheet } from '../components/BookSheet';
@@ -241,15 +241,6 @@ export const MainApp = () => {
                         className={styles.groupAction}
                       >
                         Googleカレンダー
-                      </button>
-                      <button
-                        onClick={() => {
-                          downloadIcs(group);
-                          showToast('.icsファイルをダウンロードしました');
-                        }}
-                        className={styles.groupAction}
-                      >
-                        .ics
                       </button>
                     </div>
                   </div>
