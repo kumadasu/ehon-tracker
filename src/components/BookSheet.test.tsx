@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BookSheet } from './BookSheet';
 import { makeBook } from '../test/fixtures';
+import { addDays, today } from '../utils/dateUtils';
 
 const dateInput = () => document.querySelector('input[type="date"]') as HTMLInputElement;
 
@@ -74,6 +75,55 @@ describe('BookSheet', () => {
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'book-3', isbn: '9784001140309', borrowedAt: '2024-01-01' })
     );
+  });
+
+  it('when the book is a fresh draft, it should fall back to defaults for the missing fields', async () => {
+    // Verifies the newly-scanned case, where only title/authors/isbn are known yet
+
+    // Arrange
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    render(
+      <BookSheet
+        book={{ title: 'あたらしい本', authors: '著者', isbn: '9784001140309' }}
+        onSave={onSave}
+        onCancel={vi.fn()}
+      />
+    );
+
+    // Act
+    await user.click(screen.getByRole('button', { name: '保存する' }));
+
+    // Assert
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        thumbnail: null,
+        publisher: '',
+        description: '',
+        returned: false,
+        rating: 0,
+        memo: '',
+        borrowedAt: today(),
+        dueDate: addDays(today(), 14),
+      })
+    );
+    expect(onSave.mock.calls[0][0].id).toEqual(expect.any(String));
+  });
+
+  it('when the book has no thumbnail, it should show the placeholder instead of an image', () => {
+    // Verifies the fallback rendering of the cover slot
+
+    // Arrange & Act
+    render(
+      <BookSheet
+        book={{ title: 'あたらしい本', authors: '著者', isbn: '9784001140309' }}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    // Assert
+    expect(screen.getByText('📚')).toBeInTheDocument();
   });
 
   it('when the backdrop is clicked, it should cancel without saving', async () => {

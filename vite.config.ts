@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -65,6 +65,9 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     env: { TZ: 'Asia/Tokyo' },
     coverage: {
+      // CSS Modules are imported by components but carry no executable code,
+      // so they would otherwise show up as 0% and add noise to the report.
+      exclude: [...(configDefaults.coverage.exclude ?? []), '**/*.css'],
       thresholds: {
         branches: 90,
         perFile: true,
