@@ -27,6 +27,14 @@ export const updateBook = (books: Book[], updated: Book): Book[] => {
   return next;
 };
 
+/** Sets the same due date on every book whose id is listed, leaving all other fields alone. */
+export const updateDueDates = (books: Book[], ids: string[], dueDate: string): Book[] => {
+  const targets = new Set(ids);
+  const next = books.map((b) => (targets.has(b.id) ? { ...b, dueDate } : b));
+  saveBooks(next);
+  return next;
+};
+
 export const removeBook = (books: Book[], id: string): Book[] => {
   const next = books.filter((b) => b.id !== id);
   saveBooks(next);

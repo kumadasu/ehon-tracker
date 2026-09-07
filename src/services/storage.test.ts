@@ -1,24 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { loadBooks, saveBooks, addBook, updateBook, removeBook } from './storage';
+import { loadBooks, saveBooks, addBook, updateBook, updateDueDates, removeBook } from './storage';
 import type { Book } from '../types';
+import { makeBook } from '../test/fixtures';
 
 const STORAGE_KEY = 'ehon-tracker-books';
-
-const makeBook = (overrides: Partial<Book> = {}): Book => ({
-  id: 'book-1',
-  isbn: '9784001140309',
-  title: 'ぐりとぐら',
-  authors: '中川李枝子',
-  thumbnail: null,
-  publisher: '福音館書店',
-  description: '',
-  borrowedAt: '2024-01-01',
-  dueDate: '2024-01-15',
-  returned: false,
-  rating: 0,
-  memo: '',
-  ...overrides,
-});
 
 beforeEach(() => {
   localStorage.clear();
@@ -140,6 +125,90 @@ describe('updateBook', () => {
     // Assert
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('book-1');
+  });
+});
+
+describe('updateDueDates', () => {
+  it('when several ids are given, it should set the same due date on all of them', () => {
+    // Verifies the bulk due date change applied to a whole group at once
+
+    // Arrange
+    const books = [
+      makeBook({ id: 'book-1', dueDate: '2024-01-15' }),
+      makeBook({ id: 'book-2', dueDate: '2024-01-15' }),
+      makeBook({ id: 'book-3', dueDate: '2024-01-15' }),
+    ];
+
+    // Act
+    const result = updateDueDates(books, ['book-1', 'book-2', 'book-3'], '2024-01-14');
+
+    // Assert
+    expect(result.map((b) => b.dueDate)).toEqual(['2024-01-14', '2024-01-14', '2024-01-14']);
+  });
+
+  it('when a book id is not listed, it should leave that book untouched', () => {
+    // Verifies books outside the selected group keep their own due date
+
+    // Arrange
+    const books = [
+      makeBook({ id: 'book-1', dueDate: '2024-01-15' }),
+      makeBook({ id: 'book-2', dueDate: '2024-01-22' }),
+    ];
+
+    // Act
+    const result = updateDueDates(books, ['book-1'], '2024-01-14');
+
+    // Assert
+    expect(result[0].dueDate).toBe('2024-01-14');
+    expect(result[1].dueDate).toBe('2024-01-22');
+  });
+
+  it('when the due date changes, it should keep every other field of the book intact', () => {
+    // Verifies the bulk change only touches dueDate, notably leaving borrowedAt alone
+
+    // Arrange
+    const book = makeBook({
+      id: 'book-1',
+      dueDate: '2024-01-15',
+      rating: 4,
+      memo: 'おもしろかった',
+    });
+
+    // Act
+    const result = updateDueDates([book], ['book-1'], '2024-01-14');
+
+    // Assert
+    expect(result[0]).toEqual({ ...book, dueDate: '2024-01-14' });
+  });
+
+  it('when due dates are updated, they should be persisted to localStorage', () => {
+    // Verifies the bulk change survives a reload
+
+    // Arrange
+    const books = [
+      makeBook({ id: 'book-1', dueDate: '2024-01-15' }),
+      makeBook({ id: 'book-2', dueDate: '2024-01-15' }),
+    ];
+
+    // Act
+    updateDueDates(books, ['book-1', 'book-2'], '2024-01-14');
+
+    // Assert
+    const stored: Book[] = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+    expect(stored.map((b) => b.dueDate)).toEqual(['2024-01-14', '2024-01-14']);
+  });
+
+  it('when no ids are given, it should return the array unchanged', () => {
+    // Verifies an empty selection is a no-op rather than wiping due dates
+
+    // Arrange
+    const books = [makeBook({ id: 'book-1', dueDate: '2024-01-15' })];
+
+    // Act
+    const result = updateDueDates(books, [], '2024-01-14');
+
+    // Assert
+    expect(result).toEqual(books);
   });
 });
 

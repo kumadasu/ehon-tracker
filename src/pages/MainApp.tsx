@@ -8,6 +8,7 @@ import { buildGoogleCalendarUrl, downloadIcs } from '../services/calendarLink';
 import { useBooks } from '../hooks/useBooks';
 import { BookCard } from '../components/BookCard';
 import { BookSheet } from '../components/BookSheet';
+import { DueDateSheet } from '../components/DueDateSheet';
 import { ScannerView } from '../components/ScannerView';
 import { MagazineSearchView } from '../components/MagazineSearchView';
 import { Toast } from '../components/Toast';
@@ -30,13 +31,25 @@ const TAB_STYLE = (active: boolean): React.CSSProperties => ({
   fontFamily: FONTS.body,
 });
 
+const GROUP_ACTION_STYLE = (accent = false): React.CSSProperties => ({
+  background: 'none',
+  border: `1px solid ${accent ? COLORS.accent : COLORS.border}`,
+  borderRadius: 6,
+  padding: '3px 8px',
+  fontSize: 11,
+  cursor: 'pointer',
+  color: accent ? COLORS.accent : COLORS.inkLight,
+  fontFamily: FONTS.body,
+});
+
 export const MainApp = () => {
-  const { books, add, update, markReturned } = useBooks();
+  const { books, add, update, changeDueDates, markReturned } = useBooks();
   const [tab, setTab] = useState<Tab>('borrowing');
   const [scanning, setScanning] = useState(false);
   const [showMagazineSearch, setShowMagazineSearch] = useState(false);
   const [loading, setLoading] = useState(false);
   const [editBook, setEditBook] = useState<EditableBook | null>(null);
+  const [reschedulingDueDate, setReschedulingDueDate] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [toast, setToast] = useState<string | null>(null);
 
@@ -105,6 +118,15 @@ export const MainApp = () => {
     setEditBook(null);
   };
 
+  const handleReschedule = (dueDate: string) => {
+    changeDueDates(
+      reschedulingBooks.map((b) => b.id),
+      dueDate
+    );
+    showToast(`📅 ${reschedulingBooks.length}冊の返却期限を${formatDate(dueDate)}に変更しました`);
+    setReschedulingDueDate(null);
+  };
+
   const handleReturn = (id: string) => {
     markReturned(id);
     showToast('✓ 返却済みに変更しました');
@@ -126,6 +148,11 @@ export const MainApp = () => {
     group.push(book);
     borrowingByDate.set(book.dueDate, group);
   }
+
+  // Derived from books, so the sheet never shows a stale snapshot of the group
+  const reschedulingBooks = reschedulingDueDate
+    ? (borrowingByDate.get(reschedulingDueDate) ?? [])
+    : [];
 
   const visibleBooks = tab === 'history' ? history : searchResults;
 
@@ -335,19 +362,16 @@ export const MainApp = () => {
                   </div>
                   <div style={{ display: 'flex', gap: 5 }}>
                     <button
+                      onClick={() => setReschedulingDueDate(dueDate)}
+                      style={GROUP_ACTION_STYLE(true)}
+                    >
+                      期限変更
+                    </button>
+                    <button
                       onClick={() =>
                         window.open(buildGoogleCalendarUrl(books), '_blank', 'noopener,noreferrer')
                       }
-                      style={{
-                        background: 'none',
-                        border: `1px solid ${COLORS.border}`,
-                        borderRadius: 6,
-                        padding: '3px 8px',
-                        fontSize: 11,
-                        cursor: 'pointer',
-                        color: COLORS.inkLight,
-                        fontFamily: FONTS.body,
-                      }}
+                      style={GROUP_ACTION_STYLE()}
                     >
                       Googleカレンダー
                     </button>
@@ -356,16 +380,7 @@ export const MainApp = () => {
                         downloadIcs(books);
                         showToast('.icsファイルをダウンロードしました');
                       }}
-                      style={{
-                        background: 'none',
-                        border: `1px solid ${COLORS.border}`,
-                        borderRadius: 6,
-                        padding: '3px 8px',
-                        fontSize: 11,
-                        cursor: 'pointer',
-                        color: COLORS.inkLight,
-                        fontFamily: FONTS.body,
-                      }}
+                      style={GROUP_ACTION_STYLE()}
                     >
                       .ics
                     </button>
@@ -416,6 +431,14 @@ export const MainApp = () => {
 
       {editBook && (
         <BookSheet book={editBook} onSave={handleSave} onCancel={() => setEditBook(null)} />
+      )}
+
+      {reschedulingBooks.length > 0 && (
+        <DueDateSheet
+          books={reschedulingBooks}
+          onSave={handleReschedule}
+          onCancel={() => setReschedulingDueDate(null)}
+        />
       )}
 
       {toast && <Toast message={toast} />}
