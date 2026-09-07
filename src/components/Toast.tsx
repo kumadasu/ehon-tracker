@@ -4,4 +4,12 @@ interface Props {
   message: string;
 }
 
-export const Toast = ({ message }: Props) => <div className={styles.toast}>{message}</div>;
+/**
+ * Confirmation notice. `role="status"` (with its implicit polite live region made
+ * explicit) lets a screen reader announce the message without stealing focus.
+ */
+export const Toast = ({ message }: Props) => (
+  <div role="status" aria-live="polite" className={styles.toast}>
+    {message}
+  </div>
+);
