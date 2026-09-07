@@ -1,7 +1,6 @@
 /*
- * CSS-variable mirror of src/constants/theme.ts.
- * Keep the two in sync: theme.ts serves the components that still use inline
- * styles, these variables serve the ones migrated to CSS Modules.
+ * The app's palette and fonts. Single source of truth: every component styles
+ * itself with CSS Modules that reference these variables.
  */
 :root {
   --color-bg: #f5f0e8;

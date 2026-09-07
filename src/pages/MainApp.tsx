@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { Book } from '../types';
-import { COLORS, FONTS } from '../constants/theme';
 import { today, addDays, formatDate, daysLeft } from '../utils/dateUtils';
+import { cx } from '../utils/cx';
 import { fetchBookInfo } from '../services/googleBooks';
 import type { NdlMagazineIssue } from '../services/ndlSearch';
 import { buildGoogleCalendarUrl, downloadIcs } from '../services/calendarLink';
@@ -12,35 +12,14 @@ import { DueDateSheet } from '../components/DueDateSheet';
 import { ScannerView } from '../components/ScannerView';
 import { MagazineSearchView } from '../components/MagazineSearchView';
 import { Toast } from '../components/Toast';
+import styles from './MainApp.module.css';
 
 type Tab = 'borrowing' | 'history' | 'search';
 
 type EditableBook = Partial<Book> & { title: string; authors: string; isbn: string };
 
-const TAB_STYLE = (active: boolean): React.CSSProperties => ({
-  flex: 1,
-  padding: '10px 0',
-  background: 'none',
-  border: 'none',
-  borderBottom: `2.5px solid ${active ? COLORS.accent : 'transparent'}`,
-  color: active ? COLORS.accent : COLORS.inkLight,
-  fontSize: 13,
-  fontWeight: active ? 700 : 400,
-  cursor: 'pointer',
-  transition: 'all .15s',
-  fontFamily: FONTS.body,
-});
-
-const GROUP_ACTION_STYLE = (accent = false): React.CSSProperties => ({
-  background: 'none',
-  border: `1px solid ${accent ? COLORS.accent : COLORS.border}`,
-  borderRadius: 6,
-  padding: '3px 8px',
-  fontSize: 11,
-  cursor: 'pointer',
-  color: accent ? COLORS.accent : COLORS.inkLight,
-  fontFamily: FONTS.body,
-});
+const remainingLabel = (left: number) =>
+  left < 0 ? `${Math.abs(left)}日超過` : left === 0 ? '今日まで' : `あと${left}日`;
 
 export const MainApp = () => {
   const { books, add, update, changeDueDates, markReturned } = useBooks();
@@ -156,264 +135,152 @@ export const MainApp = () => {
 
   const visibleBooks = tab === 'history' ? history : searchResults;
 
+  const stats = [
+    { label: '借り中', value: borrowing.length, tone: styles.borrowing },
+    { label: '読了', value: history.length, tone: styles.history },
+    { label: '合計', value: books.length, tone: styles.total },
+  ];
+
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'borrowing', label: `借り中 (${borrowing.length})` },
+    { id: 'history', label: `読了 (${history.length})` },
+    { id: 'search', label: '🔍 検索' },
+  ];
+
   return (
     <>
-      <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: ${COLORS.bg}; font-family: ${FONTS.body}; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: ${COLORS.border}; border-radius: 2px; }
-        @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-        .card-enter { animation: slideUp .25s ease; }
-      `}</style>
-
-      <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', background: COLORS.bg }}>
-        {/* Header */}
-        <div
-          style={{
-            padding: '20px 20px 12px',
-            borderBottom: `1px solid ${COLORS.border}`,
-            background: COLORS.paper,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className={styles.app}>
+        <div className={styles.header}>
+          <div className={styles.headerTop}>
             <div>
-              <div
-                style={{
-                  fontSize: 10,
-                  letterSpacing: 2,
-                  color: COLORS.inkLight,
-                  textTransform: 'uppercase',
-                }}
-              >
-                Library
-              </div>
-              <div
-                style={{
-                  fontFamily: FONTS.heading,
-                  fontSize: 22,
-                  fontWeight: 700,
-                  color: COLORS.ink,
-                }}
-              >
-                えほん記録帳
-              </div>
+              <div className={styles.eyebrow}>Library</div>
+              <div className={styles.wordmark}>えほん記録帳</div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button
-                onClick={() => setShowMagazineSearch(true)}
-                style={{
-                  background: 'none',
-                  border: `1.5px solid ${COLORS.accent}`,
-                  borderRadius: 12,
-                  padding: '10px 14px',
-                  color: COLORS.accent,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: FONTS.body,
-                }}
-              >
+            <div className={styles.headerActions}>
+              <button onClick={() => setShowMagazineSearch(true)} className={styles.magazineButton}>
                 📖 雑誌
               </button>
               <button
                 onClick={() => setScanning(true)}
                 disabled={loading}
-                style={{
-                  background: COLORS.accent,
-                  border: 'none',
-                  borderRadius: 12,
-                  padding: '10px 18px',
-                  color: '#fff',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontFamily: FONTS.body,
-                  opacity: loading ? 0.6 : 1,
-                }}
+                className={styles.scanButton}
               >
                 {loading ? '読込中…' : '📷 スキャン'}
               </button>
             </div>
           </div>
 
-          {/* Stats */}
-          <div style={{ display: 'flex', gap: 16, marginTop: 14 }}>
-            {(
-              [
-                { label: '借り中', value: borrowing.length, color: COLORS.accent },
-                { label: '読了', value: history.length, color: COLORS.green },
-                { label: '合計', value: books.length, color: COLORS.inkLight },
-              ] as const
-            ).map((s) => (
-              <div key={s.label} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
-                <div style={{ fontSize: 10, color: COLORS.inkLight }}>{s.label}</div>
+          <div className={styles.stats}>
+            {stats.map((s) => (
+              <div key={s.label} className={styles.stat}>
+                <div className={cx(styles.statValue, s.tone)}>{s.value}</div>
+                <div className={styles.statLabel}>{s.label}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Tabs */}
-        <div
-          style={{
-            display: 'flex',
-            borderBottom: `1px solid ${COLORS.border}`,
-            background: COLORS.paper,
-          }}
-        >
-          <button style={TAB_STYLE(tab === 'borrowing')} onClick={() => setTab('borrowing')}>
-            借り中 ({borrowing.length})
-          </button>
-          <button style={TAB_STYLE(tab === 'history')} onClick={() => setTab('history')}>
-            読了 ({history.length})
-          </button>
-          <button style={TAB_STYLE(tab === 'search')} onClick={() => setTab('search')}>
-            🔍 検索
-          </button>
+        <div className={styles.tabs}>
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={cx(styles.tab, tab === t.id && styles.active)}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
-        {/* Content */}
-        <div style={{ padding: '16px 16px 100px' }}>
+        <div className={styles.content}>
           {tab === 'search' && (
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="タイトル・著者・メモで検索…"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: `1.5px solid ${COLORS.border}`,
-                borderRadius: 10,
-                background: COLORS.paper,
-                fontSize: 15,
-                color: COLORS.ink,
-                marginBottom: 12,
-                fontFamily: FONTS.body,
-              }}
+              className={styles.searchInput}
               autoFocus
             />
           )}
 
           {tab === 'search' && query && searchResults.length === 0 && (
-            <div style={{ textAlign: 'center', color: COLORS.inkLight, padding: 32, fontSize: 14 }}>
-              「{query}」は見つかりませんでした
-            </div>
+            <div className={styles.noResults}>「{query}」は見つかりませんでした</div>
           )}
 
           {tab === 'borrowing' &&
-            Array.from(borrowingByDate.entries()).map(([dueDate, books]) => (
-              <div key={dueDate} style={{ marginBottom: 20 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingLeft: 10,
-                    marginBottom: 8,
-                    paddingBottom: 6,
-                    borderLeft: `3px solid ${COLORS.accent}`,
-                    borderBottom: `1px solid ${COLORS.border}`,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.ink }}>
-                      {formatDate(dueDate)}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: COLORS.accent,
-                        background: COLORS.accentLight,
-                        borderRadius: 10,
-                        padding: '1px 7px',
-                      }}
-                    >
-                      {books.length}冊
-                    </span>
-                    {(() => {
-                      const left = daysLeft(dueDate);
-                      const urgent = left <= 3;
-                      return (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            fontWeight: 600,
-                            color: urgent ? COLORS.accent : COLORS.inkLight,
-                            background: urgent ? COLORS.accentLight : COLORS.bg,
-                            borderRadius: 10,
-                            padding: '1px 7px',
-                          }}
-                        >
-                          {left < 0
-                            ? `${Math.abs(left)}日超過`
-                            : left === 0
-                              ? '今日まで'
-                              : `あと${left}日`}
-                        </span>
-                      );
-                    })()}
+            Array.from(borrowingByDate.entries()).map(([dueDate, group]) => {
+              const left = daysLeft(dueDate);
+              return (
+                <div key={dueDate} className={styles.group}>
+                  <div className={styles.groupHeader}>
+                    <div className={styles.groupMeta}>
+                      <span className={styles.groupDate}>{formatDate(dueDate)}</span>
+                      <span className={cx(styles.pill, styles.countPill)}>{group.length}冊</span>
+                      <span
+                        className={cx(styles.pill, styles.daysPill, left <= 3 && styles.urgent)}
+                      >
+                        {remainingLabel(left)}
+                      </span>
+                    </div>
+                    <div className={styles.groupActions}>
+                      <button
+                        onClick={() => setReschedulingDueDate(dueDate)}
+                        className={cx(styles.groupAction, styles.accent)}
+                      >
+                        期限変更
+                      </button>
+                      <button
+                        onClick={() =>
+                          window.open(
+                            buildGoogleCalendarUrl(group),
+                            '_blank',
+                            'noopener,noreferrer'
+                          )
+                        }
+                        className={styles.groupAction}
+                      >
+                        Googleカレンダー
+                      </button>
+                      <button
+                        onClick={() => {
+                          downloadIcs(group);
+                          showToast('.icsファイルをダウンロードしました');
+                        }}
+                        className={styles.groupAction}
+                      >
+                        .ics
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 5 }}>
-                    <button
-                      onClick={() => setReschedulingDueDate(dueDate)}
-                      style={GROUP_ACTION_STYLE(true)}
-                    >
-                      期限変更
-                    </button>
-                    <button
-                      onClick={() =>
-                        window.open(buildGoogleCalendarUrl(books), '_blank', 'noopener,noreferrer')
-                      }
-                      style={GROUP_ACTION_STYLE()}
-                    >
-                      Googleカレンダー
-                    </button>
-                    <button
-                      onClick={() => {
-                        downloadIcs(books);
-                        showToast('.icsファイルをダウンロードしました');
-                      }}
-                      style={GROUP_ACTION_STYLE()}
-                    >
-                      .ics
-                    </button>
-                  </div>
+                  {group.map((book) => (
+                    <div key={book.id} className={styles.cardSlot}>
+                      <BookCard book={book} onReturn={handleReturn} onEdit={setEditBook} />
+                    </div>
+                  ))}
                 </div>
-                {books.map((book) => (
-                  <div key={book.id} className="card-enter" style={{ marginBottom: 8 }}>
-                    <BookCard book={book} onReturn={handleReturn} onEdit={setEditBook} />
-                  </div>
-                ))}
-              </div>
-            ))}
+              );
+            })}
 
           {tab !== 'borrowing' &&
             visibleBooks.map((book) => (
-              <div key={book.id} className="card-enter" style={{ marginBottom: 10 }}>
+              <div key={book.id} className={cx(styles.cardSlot, styles.spaced)}>
                 <BookCard book={book} onReturn={handleReturn} onEdit={setEditBook} />
               </div>
             ))}
 
           {tab === 'borrowing' && borrowing.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: COLORS.inkLight }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>📚</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.ink, marginBottom: 6 }}>
-                借り中の本はありません
-              </div>
-              <div style={{ fontSize: 13 }}>上の「スキャン」ボタンで本を登録しましょう</div>
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>📚</div>
+              <div className={styles.emptyTitle}>借り中の本はありません</div>
+              <div className={styles.emptyHint}>上の「スキャン」ボタンで本を登録しましょう</div>
             </div>
           )}
 
           {tab === 'history' && history.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '48px 20px', color: COLORS.inkLight }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🌱</div>
-              <div style={{ fontSize: 13 }}>返却した本がここに表示されます</div>
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>🌱</div>
+              <div className={styles.emptyHint}>返却した本がここに表示されます</div>
             </div>
           )}
         </div>
