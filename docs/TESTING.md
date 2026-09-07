@@ -31,17 +31,20 @@ it('when due date is within 3 days, it should mark book as urgent', () => {
 
 ## Mock policy
 
-- **Use mocks only at the boundary of external dependencies**: HTTP requests, Firestore, localStorage, file system, and datetime (`Date.now`, `new Date()`).
+- **Use mocks only at the boundary of external dependencies**: HTTP requests, the barcode reader (`@zxing/browser`, which needs a real camera), and datetime (`Date.now`, `new Date()`). `localStorage` is not mocked — jsdom provides a real one; clear it in `beforeEach`.
 - **Do not mock functions within the same file or module.** If you need to mock an internal helper, extract it to a separate module first.
 - **When using a mock, add a one-line comment explaining why** that dependency is mocked.
 - **If more than 3 mocks are needed**, consider refactoring the design of the subject under test — it likely has too many responsibilities.
+
+Stub `fetch` when testing a service directly; mock the service module when testing a
+component that merely consumes it.
 
 ```ts
 // Mock fetch because Google Books API is an external HTTP dependency
 vi.stubGlobal('fetch', vi.fn());
 
-// Mock Firestore because tests must not write to a real database
-vi.mock('../services/firebase');
+// Mock the NDL service because it is the HTTP boundary of this component
+vi.mock('../services/ndlSearch', () => ({ searchMagazineIssues: vi.fn() }));
 ```
 
 ## Tools
@@ -52,4 +55,4 @@ vi.mock('../services/firebase');
 | Component testing | @testing-library/react      |
 | User interactions | @testing-library/user-event |
 | DOM matchers      | @testing-library/jest-dom   |
-| HTTP mocking      | msw (Mock Service Worker)   |
+| HTTP mocking      | `vi.stubGlobal` / `vi.mock` |
