@@ -1,0 +1,44 @@
+.heading {
+  margin-bottom: 8px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.titles {
+  max-height: 96px;
+  margin-bottom: 18px;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--color-ink-light);
+}
+
+.dateField {
+  margin-bottom: 10px;
+}
+
+.shifts {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.shift {
+  flex: 1;
+  padding: 8px 0;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink-light);
+  cursor: pointer;
+}
+
+.shift:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
