@@ -26,13 +26,26 @@ export const serializeBackup = (books: Book[], exportedAt: string): string => {
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
+/** True for a `YYYY-MM-DD` string naming a real calendar day (rejects 2024-02-30). */
+const isCalendarDate = (v: unknown): v is string => {
+  if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const [y, m, d] = v.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+};
+
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
 const toBook = (raw: unknown, index: number): Book => {
   if (!isRecord(raw)) throw new InvalidBackupError(`books[${index}] is not an object`);
-  for (const key of ['id', 'title', 'borrowedAt', 'dueDate'] as const) {
+  for (const key of ['id', 'title'] as const) {
     if (typeof raw[key] !== 'string' || raw[key] === '') {
       throw new InvalidBackupError(`books[${index}].${key} is missing`);
+    }
+  }
+  for (const key of ['borrowedAt', 'dueDate'] as const) {
+    if (!isCalendarDate(raw[key])) {
+      throw new InvalidBackupError(`books[${index}].${key} is not a YYYY-MM-DD date`);
     }
   }
   const rating = typeof raw.rating === 'number' ? Math.min(5, Math.max(0, raw.rating)) : 0;
@@ -69,6 +82,11 @@ export const parseBackup = (text: string): Book[] => {
   if (Array.isArray(data)) {
     list = data;
   } else if (isRecord(data) && data.app === APP_ID && Array.isArray(data.books)) {
+    // A file from another format version may carry fields this build would
+    // silently drop or default, then overwrite good local records with
+    if (data.version !== FORMAT_VERSION) {
+      throw new InvalidBackupError(`unsupported backup version ${String(data.version)}`);
+    }
     list = data.books;
   } else {
     throw new InvalidBackupError('not an ehon-tracker backup');
@@ -77,8 +95,10 @@ export const parseBackup = (text: string): Book[] => {
 };
 
 /**
- * Merges imported books into the current list. A book whose id already exists is
- * replaced in place by the imported copy; new books are prepended in file order.
+ * Merges imported books into the current list, matching on id. Each registration
+ * gets its own id, so borrowing the same title twice yields two records and both
+ * survive. Only the same record (same id) is replaced in place by the imported
+ * copy; new records are prepended in file order.
  */
 export const mergeBooks = (current: Book[], imported: Book[]): Book[] => {
   const byId = new Map(imported.map((b) => [b.id, b]));

@@ -50,7 +50,7 @@ export const BackupPanel = ({ books, onImport, onMessage }: Props) => {
       <div className={styles.title}>データのバックアップ</div>
       <div className={styles.hint}>
         {'借り中・読了のすべての記録をファイルに保存して、別の端末で読み込めます。' +
-          '同じ本はファイルの内容で上書きされます。'}
+          '同じ記録（同じ回の貸出）はファイルの内容で上書きされ、別の回に借りた記録はそのまま残ります。'}
       </div>
       <div className={styles.actions}>
         <button onClick={handleExport} disabled={books.length === 0} className={styles.button}>

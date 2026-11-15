@@ -86,6 +86,14 @@ describe('parseBackup', () => {
     ['a non-object entry', JSON.stringify(['book'])],
     ['an entry without an id', JSON.stringify([{ title: 'a', borrowedAt: 'x', dueDate: 'y' }])],
     ['an entry with an empty title', JSON.stringify([makeBook({ title: '' })])],
+    ['a malformed due date', JSON.stringify([makeBook({ dueDate: 'abc' })])],
+    ['an impossible borrow date', JSON.stringify([makeBook({ borrowedAt: '2024-02-30' })])],
+    ['a non-string due date', JSON.stringify([makeBook({ dueDate: 20240115 as never })])],
+    [
+      'a newer format version',
+      JSON.stringify({ app: 'ehon-tracker', version: 2, exportedAt: '2026-11-15', books: [] }),
+    ],
+    ['a wrapper without a version', JSON.stringify({ app: 'ehon-tracker', books: [] })],
   ])('when given %s, it should throw InvalidBackupError', (_, text) => {
     // Verifies anything other than a well-formed backup is rejected as a whole
 
@@ -95,6 +103,20 @@ describe('parseBackup', () => {
 });
 
 describe('mergeBooks', () => {
+  it('when the same title was borrowed twice, it should keep both records', () => {
+    // Verifies records are matched by id, not by ISBN, so separate loans survive
+
+    // Arrange
+    const current = [makeBook({ id: 'april', borrowedAt: '2026-04-01' })];
+    const imported = [makeBook({ id: 'october', borrowedAt: '2026-10-01' })];
+
+    // Act
+    const result = mergeBooks(current, imported);
+
+    // Assert
+    expect(result.map((b) => b.id)).toEqual(['october', 'april']);
+  });
+
   it('when ids overlap, it should replace in place and prepend new books', () => {
     // Verifies import neither duplicates nor drops books already on the device
 
