@@ -444,25 +444,75 @@ describe('MainApp — stats', () => {
 });
 
 describe('MainApp — backup', () => {
-  it('when a backup file is imported on the history tab, it should list the restored books', async () => {
-    // Verifies the panel is wired to useBooks so imported books show up immediately
+  const backupFile = (...books: Book[]) =>
+    new File([JSON.stringify(books)], 'backup.json', { type: 'application/json' });
+
+  it('when nothing is recorded, the empty screen should offer to restore a backup', async () => {
+    // Verifies the fresh-device shortcut imports straight into the list
 
     // Arrange
     const user = userEvent.setup();
     render(<MainApp />);
-    await user.click(screen.getByRole('button', { name: /読了/ }));
-    const file = new File(
-      [JSON.stringify([makeBook({ id: 'r', title: 'ねないこだれだ', returned: true })])],
-      'backup.json',
-      { type: 'application/json' }
-    );
+    expect(screen.getByRole('button', { name: 'バックアップから読み込む' })).toBeInTheDocument();
 
     // Act
-    await user.upload(screen.getByTestId('backup-file-input'), file);
+    await user.upload(
+      screen.getByTestId('backup-file-input'),
+      backupFile(makeBook({ id: 'r', title: 'ねないこだれだ', dueDate: addDays(today(), 5) }))
+    );
 
     // Assert
     expect(await screen.findByText('ねないこだれだ')).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('1冊を読み込みました');
     expect(stored().map((b) => b.id)).toEqual(['r']);
+    expect(screen.queryByRole('button', { name: 'バックアップから読み込む' })).toBeNull();
+  });
+
+  it('when books are recorded, it should not show the restore shortcut', () => {
+    // Verifies the shortcut stays out of the way in everyday use
+
+    // Arrange
+    seed(makeBook({ returned: true }));
+
+    // Act
+    render(<MainApp />);
+
+    // Assert
+    expect(screen.queryByRole('button', { name: 'バックアップから読み込む' })).toBeNull();
+  });
+
+  it('when a backup is imported from the settings sheet, it should close the sheet and merge', async () => {
+    // Verifies the header button opens the sheet and its import reaches useBooks
+
+    // Arrange
+    const user = userEvent.setup();
+    seed(makeBook({ id: 'a' }));
+    render(<MainApp />);
+    await user.click(screen.getByRole('button', { name: 'データのバックアップ' }));
+
+    // Act
+    await user.upload(screen.getByTestId('backup-file-input'), backupFile(makeBook({ id: 'b' })));
+
+    // Assert
+    expect(await screen.findByRole('status')).toHaveTextContent('1冊を読み込みました');
+    expect(screen.queryByText('データのバックアップ')).toBeNull();
+    expect(stored().map((b) => b.id)).toEqual(['b', 'a']);
+  });
+
+  it('when the settings sheet is dismissed, it should close without changing anything', async () => {
+    // Verifies the sheet can be backed out of
+
+    // Arrange
+    const user = userEvent.setup();
+    seed(makeBook({ id: 'a' }));
+    render(<MainApp />);
+    await user.click(screen.getByRole('button', { name: 'データのバックアップ' }));
+
+    // Act
+    await user.click(document.querySelector('[class*="backdrop"]') as HTMLElement);
+
+    // Assert
+    expect(screen.queryByText('データのバックアップ')).toBeNull();
+    expect(stored().map((b) => b.id)).toEqual(['a']);
   });
 });
