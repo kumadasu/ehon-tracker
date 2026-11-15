@@ -119,4 +119,21 @@ describe('useBooks', () => {
     // Assert
     expect(result.current.books).toBe(before);
   });
+
+  it('when books are imported, it should merge them into state and storage', () => {
+    // Verifies the import path persists, so a reload keeps the restored books
+
+    // Arrange
+    seed(makeBook({ id: '1', memo: '' }));
+    const { result } = renderHook(() => useBooks());
+
+    // Act
+    act(() =>
+      result.current.importBooks([makeBook({ id: '1', memo: '上書き' }), makeBook({ id: '2' })])
+    );
+
+    // Assert
+    expect(result.current.books.map((b) => b.id)).toEqual(['2', '1']);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')[1].memo).toBe('上書き');
+  });
 });

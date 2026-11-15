@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MainApp } from './MainApp';
-import { makeBook } from '../test/fixtures';
+import { makeBook, makeBackupFile } from '../test/fixtures';
 import { addDays, today, formatDate } from '../utils/dateUtils';
 import { fetchBookInfo } from '../services/googleBooks';
 import type { Book } from '../types';
@@ -440,5 +440,81 @@ describe('MainApp — stats', () => {
     expect(within(stats).getByText('借り中').previousSibling).toHaveTextContent('2');
     expect(within(stats).getByText('読了').previousSibling).toHaveTextContent('1');
     expect(within(stats).getByText('合計').previousSibling).toHaveTextContent('3');
+  });
+});
+
+describe('MainApp — backup', () => {
+  const openBackupSheet = async () => {
+    const user = userEvent.setup();
+    seed(makeBook({ id: 'a' }));
+    render(<MainApp />);
+    await user.click(screen.getByRole('button', { name: 'データのバックアップ' }));
+    return user;
+  };
+
+  it('when nothing is recorded, the empty screen should offer to restore a backup', async () => {
+    // Verifies the fresh-device shortcut imports straight into the list
+
+    // Arrange
+    const user = userEvent.setup();
+    render(<MainApp />);
+    expect(screen.getByRole('button', { name: 'バックアップから読み込む' })).toBeInTheDocument();
+
+    // Act
+    await user.upload(
+      screen.getByTestId('backup-file-input'),
+      makeBackupFile(makeBook({ id: 'r', title: 'ねないこだれだ', dueDate: addDays(today(), 5) }))
+    );
+
+    // Assert
+    expect(await screen.findByText('ねないこだれだ')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('1冊を読み込みました');
+    expect(stored().map((b) => b.id)).toEqual(['r']);
+    expect(screen.queryByRole('button', { name: 'バックアップから読み込む' })).toBeNull();
+  });
+
+  it('when books are recorded, it should not show the restore shortcut', () => {
+    // Verifies the shortcut stays out of the way in everyday use
+
+    // Arrange
+    seed(makeBook({ returned: true }));
+
+    // Act
+    render(<MainApp />);
+
+    // Assert
+    expect(screen.queryByRole('button', { name: 'バックアップから読み込む' })).toBeNull();
+  });
+
+  it('when a backup is imported from the settings sheet, it should close the sheet and merge', async () => {
+    // Verifies the header button opens the sheet and its import reaches useBooks
+
+    // Arrange
+    const user = await openBackupSheet();
+
+    // Act
+    await user.upload(
+      screen.getByTestId('backup-file-input'),
+      makeBackupFile(makeBook({ id: 'b' }))
+    );
+
+    // Assert
+    expect(await screen.findByRole('status')).toHaveTextContent('1冊を読み込みました');
+    expect(screen.queryByText('データのバックアップ')).toBeNull();
+    expect(stored().map((b) => b.id)).toEqual(['b', 'a']);
+  });
+
+  it('when the settings sheet is dismissed, it should close without changing anything', async () => {
+    // Verifies the sheet can be backed out of
+
+    // Arrange
+    const user = await openBackupSheet();
+
+    // Act
+    await user.click(document.querySelector('[class*="backdrop"]') as HTMLElement);
+
+    // Assert
+    expect(screen.queryByText('データのバックアップ')).toBeNull();
+    expect(stored().map((b) => b.id)).toEqual(['a']);
   });
 });

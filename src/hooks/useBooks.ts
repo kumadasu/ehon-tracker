@@ -8,6 +8,7 @@ import {
   updateDueDates,
   removeBook,
 } from '../services/storage';
+import { mergeBooks } from '../services/backup';
 
 export const useBooks = () => {
   const [books, setBooks] = useState<Book[]>(() => loadBooks());
@@ -73,5 +74,16 @@ export const useBooks = () => {
     [persist]
   );
 
-  return { books, add, update, changeDueDates, remove, markReturned };
+  const importBooks = useCallback(
+    (imported: Book[]) => {
+      setBooks((prev) => {
+        const next = mergeBooks(prev, imported);
+        persist(next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
+  return { books, add, update, changeDueDates, remove, markReturned, importBooks };
 };

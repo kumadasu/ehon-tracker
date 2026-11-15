@@ -1,4 +1,5 @@
 import type { Book } from '../types';
+import { serializeBackup } from '../services/backup';
 
 export const makeBook = (overrides: Partial<Book> = {}): Book => ({
   id: 'book-1',
@@ -15,3 +16,7 @@ export const makeBook = (overrides: Partial<Book> = {}): Book => ({
   memo: '',
   ...overrides,
 });
+
+/** A backup file in the real export format, ready for userEvent.upload. */
+export const makeBackupFile = (...books: Book[]): File =>
+  new File([serializeBackup(books, '2026-11-15')], 'backup.json', { type: 'application/json' });

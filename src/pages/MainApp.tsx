@@ -12,6 +12,8 @@ import { DueDateSheet } from '../components/DueDateSheet';
 import { ScannerView } from '../components/ScannerView';
 import { MagazineSearchView } from '../components/MagazineSearchView';
 import { Toast } from '../components/Toast';
+import { BackupSheet } from '../components/BackupSheet';
+import { BackupImportButton } from '../components/BackupImportButton';
 import styles from './MainApp.module.css';
 
 type Tab = 'borrowing' | 'history' | 'search';
@@ -22,7 +24,7 @@ const remainingLabel = (left: number) =>
   left < 0 ? `${Math.abs(left)}日超過` : left === 0 ? '今日まで' : `あと${left}日`;
 
 export const MainApp = () => {
-  const { books, add, update, changeDueDates, markReturned } = useBooks();
+  const { books, add, update, changeDueDates, markReturned, importBooks } = useBooks();
   const [tab, setTab] = useState<Tab>('borrowing');
   const [scanning, setScanning] = useState(false);
   const [showMagazineSearch, setShowMagazineSearch] = useState(false);
@@ -31,6 +33,7 @@ export const MainApp = () => {
   const [reschedulingDueDate, setReschedulingDueDate] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [toast, setToast] = useState<string | null>(null);
+  const [showBackup, setShowBackup] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -178,6 +181,13 @@ export const MainApp = () => {
                 <div className={styles.statLabel}>{s.label}</div>
               </div>
             ))}
+            <button
+              onClick={() => setShowBackup(true)}
+              aria-label="データのバックアップ"
+              className={styles.settingsButton}
+            >
+              ⚙
+            </button>
           </div>
         </div>
 
@@ -265,6 +275,18 @@ export const MainApp = () => {
               <div className={styles.emptyIcon}>📚</div>
               <div className={styles.emptyTitle}>借り中の本はありません</div>
               <div className={styles.emptyHint}>上の「スキャン」ボタンで本を登録しましょう</div>
+              {/* Shortcut for a fresh device; hidden once anything is recorded */}
+              {books.length === 0 && (
+                <div className={styles.restore}>
+                  以前のデータがあれば →{' '}
+                  <BackupImportButton
+                    label="バックアップから読み込む"
+                    className={styles.restoreLink}
+                    onImport={importBooks}
+                    onMessage={showToast}
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -295,6 +317,15 @@ export const MainApp = () => {
           books={reschedulingBooks}
           onSave={handleReschedule}
           onCancel={() => setReschedulingDueDate(null)}
+        />
+      )}
+
+      {showBackup && (
+        <BackupSheet
+          books={books}
+          onImport={importBooks}
+          onMessage={showToast}
+          onClose={() => setShowBackup(false)}
         />
       )}
 
