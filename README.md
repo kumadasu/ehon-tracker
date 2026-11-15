@@ -13,6 +13,7 @@ A web app for keeping track of picture books borrowed from the library — what 
 - Bulk due-date change per group, for when a stack of books is scanned a day late or a loan is extended
 - Star rating and a memo per book, kept after it is returned
 - Add a group's due date to Google Calendar
+- Export every record to a JSON file and import it back (from the 読了 tab) — for backups or moving to another device. Importing merges by id: a book already on the device is overwritten by the file's copy, nothing is deleted
 - No account and no sign-in — every book you record is kept in `localStorage` on the device. The only server-side piece is a small proxy for the NDL API, which stores nothing.
 
 ## Setup

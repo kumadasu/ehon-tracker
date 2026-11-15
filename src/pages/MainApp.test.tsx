@@ -442,3 +442,27 @@ describe('MainApp — stats', () => {
     expect(within(stats).getByText('合計').previousSibling).toHaveTextContent('3');
   });
 });
+
+describe('MainApp — backup', () => {
+  it('when a backup file is imported on the history tab, it should list the restored books', async () => {
+    // Verifies the panel is wired to useBooks so imported books show up immediately
+
+    // Arrange
+    const user = userEvent.setup();
+    render(<MainApp />);
+    await user.click(screen.getByRole('button', { name: /読了/ }));
+    const file = new File(
+      [JSON.stringify([makeBook({ id: 'r', title: 'ねないこだれだ', returned: true })])],
+      'backup.json',
+      { type: 'application/json' }
+    );
+
+    // Act
+    await user.upload(screen.getByTestId('backup-file-input'), file);
+
+    // Assert
+    expect(await screen.findByText('ねないこだれだ')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('1冊を読み込みました');
+    expect(stored().map((b) => b.id)).toEqual(['r']);
+  });
+});
