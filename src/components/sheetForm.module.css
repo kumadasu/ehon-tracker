@@ -1,4 +1,12 @@
-/* Form pieces shared by BookSheet and DueDateSheet. */
+/* Pieces shared by the bottom sheets (BookSheet, DueDateSheet, BackupSheet). */
+
+.heading {
+  margin-bottom: 8px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
 
 .field {
   display: block;

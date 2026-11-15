@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { serializeBackup, parseBackup, mergeBooks, InvalidBackupError } from './backup';
+import { serializeBackup, parseBackup, mergeBooks } from './backup';
 import { makeBook } from '../test/fixtures';
 
 describe('serializeBackup / parseBackup', () => {
@@ -94,11 +94,11 @@ describe('parseBackup', () => {
       JSON.stringify({ app: 'ehon-tracker', version: 2, exportedAt: '2026-11-15', books: [] }),
     ],
     ['a wrapper without a version', JSON.stringify({ app: 'ehon-tracker', books: [] })],
-  ])('when given %s, it should throw InvalidBackupError', (_, text) => {
+  ])('when given %s, it should throw', (_, text) => {
     // Verifies anything other than a well-formed backup is rejected as a whole
 
     // Act & Assert
-    expect(() => parseBackup(text)).toThrow(InvalidBackupError);
+    expect(() => parseBackup(text)).toThrow();
   });
 });
 

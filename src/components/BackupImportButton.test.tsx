@@ -1,26 +1,23 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ImportButton } from './ImportButton';
-import { makeBook } from '../test/fixtures';
-import { serializeBackup } from '../services/backup';
-
-const jsonFile = (text: string) => new File([text], 'backup.json', { type: 'application/json' });
+import { BackupImportButton } from './BackupImportButton';
+import { makeBook, makeBackupFile } from '../test/fixtures';
 
 const renderButton = () => {
   const onImport = vi.fn();
   const onMessage = vi.fn();
-  render(<ImportButton label="読み込む" onImport={onImport} onMessage={onMessage} />);
+  render(<BackupImportButton label="読み込む" onImport={onImport} onMessage={onMessage} />);
   return { onImport, onMessage, input: screen.getByTestId('backup-file-input') };
 };
 
-describe('ImportButton', () => {
+describe('BackupImportButton', () => {
   it('when a valid backup is chosen, it should pass its books on and report the count', async () => {
     // Verifies the happy path from file picker to onImport
 
     // Arrange
     const { onImport, onMessage, input } = renderButton();
-    const file = jsonFile(serializeBackup([makeBook({ id: 'x' })], '2026-11-15'));
+    const file = makeBackupFile(makeBook({ id: 'x' }));
 
     // Act
     await userEvent.upload(input, file);
@@ -37,7 +34,7 @@ describe('ImportButton', () => {
     const { onImport, onMessage, input } = renderButton();
 
     // Act
-    await userEvent.upload(input, jsonFile('garbage'));
+    await userEvent.upload(input, new File(['garbage'], 'backup.json'));
 
     // Assert
     expect(onImport).not.toHaveBeenCalled();

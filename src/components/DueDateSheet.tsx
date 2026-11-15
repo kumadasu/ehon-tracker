@@ -21,7 +21,7 @@ export const DueDateSheet = ({ books, onSave, onCancel }: Props) => {
 
   return (
     <BottomSheet onClose={onCancel}>
-      <div className={styles.heading}>{books.length}冊の返却期限を変更</div>
+      <div className={form.heading}>{books.length}冊の返却期限を変更</div>
 
       {/* Affected books, so it is clear what the change applies to */}
       <div className={styles.titles}>

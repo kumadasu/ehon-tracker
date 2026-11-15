@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import type { Book } from '../types';
 import { parseBackup } from '../services/backup';
-import styles from './ImportButton.module.css';
 
 interface Props {
   label: string;
@@ -12,7 +11,7 @@ interface Props {
 }
 
 /** A button that opens the file picker and hands a parsed backup to onImport. */
-export const ImportButton = ({ label, className, onImport, onMessage }: Props) => {
+export const BackupImportButton = ({ label, className, onImport, onMessage }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -40,7 +39,7 @@ export const ImportButton = ({ label, className, onImport, onMessage }: Props) =
         type="file"
         accept="application/json,.json"
         onChange={handleFile}
-        className={styles.fileInput}
+        hidden
         data-testid="backup-file-input"
       />
     </>

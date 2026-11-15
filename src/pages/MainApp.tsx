@@ -13,7 +13,7 @@ import { ScannerView } from '../components/ScannerView';
 import { MagazineSearchView } from '../components/MagazineSearchView';
 import { Toast } from '../components/Toast';
 import { BackupSheet } from '../components/BackupSheet';
-import { ImportButton } from '../components/ImportButton';
+import { BackupImportButton } from '../components/BackupImportButton';
 import styles from './MainApp.module.css';
 
 type Tab = 'borrowing' | 'history' | 'search';
@@ -279,7 +279,7 @@ export const MainApp = () => {
               {books.length === 0 && (
                 <div className={styles.restore}>
                   以前のデータがあれば →{' '}
-                  <ImportButton
+                  <BackupImportButton
                     label="バックアップから読み込む"
                     className={styles.restoreLink}
                     onImport={importBooks}
@@ -323,10 +323,7 @@ export const MainApp = () => {
       {showBackup && (
         <BackupSheet
           books={books}
-          onImport={(imported) => {
-            importBooks(imported);
-            setShowBackup(false);
-          }}
+          onImport={importBooks}
           onMessage={showToast}
           onClose={() => setShowBackup(false)}
         />

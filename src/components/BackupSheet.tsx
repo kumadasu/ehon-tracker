@@ -2,8 +2,9 @@ import type { Book } from '../types';
 import { serializeBackup } from '../services/backup';
 import { today } from '../utils/dateUtils';
 import { BottomSheet } from './BottomSheet';
-import { ImportButton } from './ImportButton';
+import { BackupImportButton } from './BackupImportButton';
 import styles from './BackupSheet.module.css';
+import form from './sheetForm.module.css';
 
 interface Props {
   books: Book[];
@@ -32,7 +33,7 @@ export const BackupSheet = ({ books, onImport, onMessage, onClose }: Props) => {
 
   return (
     <BottomSheet onClose={onClose}>
-      <div className={styles.heading}>データのバックアップ</div>
+      <div className={form.heading}>データのバックアップ</div>
       <div className={styles.hint}>
         {'借り中・読了のすべての記録をファイルに保存して、別の端末で読み込めます。' +
           '同じ記録（同じ回の貸出）はファイルの内容で上書きされ、別の回に借りた記録はそのまま残ります。'}
@@ -41,10 +42,13 @@ export const BackupSheet = ({ books, onImport, onMessage, onClose }: Props) => {
         <button onClick={handleExport} disabled={books.length === 0} className={styles.button}>
           書き出す
         </button>
-        <ImportButton
+        <BackupImportButton
           label="読み込む"
           className={styles.button}
-          onImport={onImport}
+          onImport={(imported) => {
+            onImport(imported);
+            onClose();
+          }}
           onMessage={onMessage}
         />
       </div>

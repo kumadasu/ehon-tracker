@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MainApp } from './MainApp';
-import { makeBook } from '../test/fixtures';
+import { makeBook, makeBackupFile } from '../test/fixtures';
 import { addDays, today, formatDate } from '../utils/dateUtils';
 import { fetchBookInfo } from '../services/googleBooks';
 import type { Book } from '../types';
@@ -444,8 +444,13 @@ describe('MainApp — stats', () => {
 });
 
 describe('MainApp — backup', () => {
-  const backupFile = (...books: Book[]) =>
-    new File([JSON.stringify(books)], 'backup.json', { type: 'application/json' });
+  const openBackupSheet = async () => {
+    const user = userEvent.setup();
+    seed(makeBook({ id: 'a' }));
+    render(<MainApp />);
+    await user.click(screen.getByRole('button', { name: 'データのバックアップ' }));
+    return user;
+  };
 
   it('when nothing is recorded, the empty screen should offer to restore a backup', async () => {
     // Verifies the fresh-device shortcut imports straight into the list
@@ -458,7 +463,7 @@ describe('MainApp — backup', () => {
     // Act
     await user.upload(
       screen.getByTestId('backup-file-input'),
-      backupFile(makeBook({ id: 'r', title: 'ねないこだれだ', dueDate: addDays(today(), 5) }))
+      makeBackupFile(makeBook({ id: 'r', title: 'ねないこだれだ', dueDate: addDays(today(), 5) }))
     );
 
     // Assert
@@ -485,13 +490,13 @@ describe('MainApp — backup', () => {
     // Verifies the header button opens the sheet and its import reaches useBooks
 
     // Arrange
-    const user = userEvent.setup();
-    seed(makeBook({ id: 'a' }));
-    render(<MainApp />);
-    await user.click(screen.getByRole('button', { name: 'データのバックアップ' }));
+    const user = await openBackupSheet();
 
     // Act
-    await user.upload(screen.getByTestId('backup-file-input'), backupFile(makeBook({ id: 'b' })));
+    await user.upload(
+      screen.getByTestId('backup-file-input'),
+      makeBackupFile(makeBook({ id: 'b' }))
+    );
 
     // Assert
     expect(await screen.findByRole('status')).toHaveTextContent('1冊を読み込みました');
@@ -503,10 +508,7 @@ describe('MainApp — backup', () => {
     // Verifies the sheet can be backed out of
 
     // Arrange
-    const user = userEvent.setup();
-    seed(makeBook({ id: 'a' }));
-    render(<MainApp />);
-    await user.click(screen.getByRole('button', { name: 'データのバックアップ' }));
+    const user = await openBackupSheet();
 
     // Act
     await user.click(document.querySelector('[class*="backdrop"]') as HTMLElement);

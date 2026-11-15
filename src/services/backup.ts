@@ -1,98 +1,66 @@
 import type { Book } from '../types';
+import { isValidDate } from '../utils/dateUtils';
 
 const APP_ID = 'ehon-tracker';
 const FORMAT_VERSION = 1;
 
-interface BackupFile {
-  app: typeof APP_ID;
-  version: number;
-  exportedAt: string;
-  books: Book[];
-}
-
-/** Thrown when a file does not look like an ehon-tracker backup. */
-export class InvalidBackupError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidBackupError';
-  }
-}
-
-export const serializeBackup = (books: Book[], exportedAt: string): string => {
-  const file: BackupFile = { app: APP_ID, version: FORMAT_VERSION, exportedAt, books };
-  return JSON.stringify(file, null, 2);
-};
+export const serializeBackup = (books: Book[], exportedAt: string): string =>
+  JSON.stringify({ app: APP_ID, version: FORMAT_VERSION, exportedAt, books }, null, 2);
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
-/** True for a `YYYY-MM-DD` string naming a real calendar day (rejects 2024-02-30). */
-const isCalendarDate = (v: unknown): v is string => {
-  if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
-  const [y, m, d] = v.split('-').map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  return date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
-};
-
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');
 
+const requiredStr = (raw: Record<string, unknown>, key: string, index: number): string => {
+  const v = raw[key];
+  if (typeof v !== 'string' || v === '') throw new Error(`books[${index}].${key} is missing`);
+  return v;
+};
+
+const requiredDate = (raw: Record<string, unknown>, key: string, index: number): string => {
+  const v = raw[key];
+  if (!isValidDate(v)) throw new Error(`books[${index}].${key} is not a YYYY-MM-DD date`);
+  return v;
+};
+
 const toBook = (raw: unknown, index: number): Book => {
-  if (!isRecord(raw)) throw new InvalidBackupError(`books[${index}] is not an object`);
-  for (const key of ['id', 'title'] as const) {
-    if (typeof raw[key] !== 'string' || raw[key] === '') {
-      throw new InvalidBackupError(`books[${index}].${key} is missing`);
-    }
-  }
-  for (const key of ['borrowedAt', 'dueDate'] as const) {
-    if (!isCalendarDate(raw[key])) {
-      throw new InvalidBackupError(`books[${index}].${key} is not a YYYY-MM-DD date`);
-    }
-  }
-  const rating = typeof raw.rating === 'number' ? Math.min(5, Math.max(0, raw.rating)) : 0;
+  if (!isRecord(raw)) throw new Error(`books[${index}] is not an object`);
   const book: Book = {
-    id: raw.id as string,
+    id: requiredStr(raw, 'id', index),
     isbn: str(raw.isbn),
-    title: raw.title as string,
+    title: requiredStr(raw, 'title', index),
     authors: str(raw.authors),
     thumbnail: typeof raw.thumbnail === 'string' ? raw.thumbnail : null,
     publisher: str(raw.publisher),
     description: str(raw.description),
-    borrowedAt: raw.borrowedAt as string,
-    dueDate: raw.dueDate as string,
+    borrowedAt: requiredDate(raw, 'borrowedAt', index),
+    dueDate: requiredDate(raw, 'dueDate', index),
     returned: raw.returned === true,
-    rating,
+    rating: typeof raw.rating === 'number' ? Math.min(5, Math.max(0, raw.rating)) : 0,
     memo: str(raw.memo),
   };
   if (typeof raw.volume === 'string') book.volume = raw.volume;
   return book;
 };
 
-/**
- * Parses a backup file. Also accepts a bare array of books, which is what the
- * localStorage value itself looks like, so a hand-copied dump can be restored.
- */
-export const parseBackup = (text: string): Book[] => {
-  let data: unknown;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new InvalidBackupError('not JSON');
+const bookList = (data: unknown): unknown[] => {
+  // A bare array is what the localStorage value itself looks like, so a
+  // hand-copied dump can be restored too
+  if (Array.isArray(data)) return data;
+  if (!isRecord(data) || data.app !== APP_ID || !Array.isArray(data.books)) {
+    throw new Error('not an ehon-tracker backup');
   }
-  let list: unknown;
-  if (Array.isArray(data)) {
-    list = data;
-  } else if (isRecord(data) && data.app === APP_ID && Array.isArray(data.books)) {
-    // A file from another format version may carry fields this build would
-    // silently drop or default, then overwrite good local records with
-    if (data.version !== FORMAT_VERSION) {
-      throw new InvalidBackupError(`unsupported backup version ${String(data.version)}`);
-    }
-    list = data.books;
-  } else {
-    throw new InvalidBackupError('not an ehon-tracker backup');
+  // A file from another format version may carry fields this build would
+  // silently drop or default, then overwrite good local records with
+  if (data.version !== FORMAT_VERSION) {
+    throw new Error(`unsupported backup version ${String(data.version)}`);
   }
-  return (list as unknown[]).map(toBook);
+  return data.books;
 };
+
+/** Parses a backup file, throwing if it or any record in it is malformed. */
+export const parseBackup = (text: string): Book[] => bookList(JSON.parse(text)).map(toBook);
 
 /**
  * Merges imported books into the current list, matching on id. Each registration

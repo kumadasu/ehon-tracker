@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { today, addDays, formatDate, daysLeft } from './dateUtils';
+import { today, addDays, formatDate, daysLeft, isValidDate } from './dateUtils';
 
 // All tests run with TZ=Asia/Tokyo (set in vite.config.ts).
 // Base anchor: 2024-01-15T12:00:00.000Z = 2024-01-15T21:00:00+09:00 (JST)
@@ -136,5 +136,29 @@ describe('daysLeft', () => {
 
     // Assert — dueDate matches JST today, so 0 days left (not 1 as UTC-based code would return)
     expect(result).toBe(0);
+  });
+});
+
+describe('isValidDate', () => {
+  it.each(['2024-01-15', '2024-02-29'])('when given %s, it should accept it', (v) => {
+    // Verifies real calendar days, including a leap day, pass
+
+    // Act & Assert
+    expect(isValidDate(v)).toBe(true);
+  });
+
+  it.each([
+    ['abc'],
+    ['2024-1-5'],
+    ['2024-02-30'],
+    ['2023-02-29'],
+    ['2024-13-01'],
+    [20240115],
+    [null],
+  ])('when given %s, it should reject it', (v) => {
+    // Verifies malformed strings, impossible days and non-strings fail
+
+    // Act & Assert
+    expect(isValidDate(v)).toBe(false);
   });
 });
